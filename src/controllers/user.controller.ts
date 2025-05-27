@@ -3,14 +3,14 @@ import { checkCharacter, checkEmail, checkNumberInput } from "../utils/checkInpu
 import { userRegisterService } from "../services/user.service"
 import prisma from "../connection/db"
 import { comparePassword } from "../utils/hashPassword"
-import { tokenSign } from "../utils/verifyToken"
+import { tokenSign, tokenVerify } from "../utils/tokenJwt"
 
 export const userRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { firstName, lastName, email, phoneNumber } = req.body
 
         if (!firstName || !lastName || !email || !phoneNumber) throw { msg: 'Harap diisi terlebih dahulu', status: 404 }
-        if (!checkCharacter(firstName) || !checkCharacter(lastName)) throw { msg: 'Tidak boleh mengandung karakter', status: 400 }
+        if (!checkCharacter(firstName) || !checkCharacter(lastName)) throw { msg: 'Nama tidak boleh mengandung karakter atau angka', status: 400 }
         if (!checkNumberInput(phoneNumber)) throw { msg: 'No Telpon hanya berupa angka 0-9', status: 400 }
         if (!checkEmail(email)) throw { msg: 'Format email salah', status: 400 }
 
@@ -29,7 +29,6 @@ export const userRegister = async (req: Request, res: Response, next: NextFuncti
 export const userLogin = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { email, password } = req.body
-        console.log(email, '<<<')
         if (!email || !password) throw { msg: 'Isi data terlebih dahulu', status: 400 }
         if (!checkEmail(email)) throw { msg: 'Format Email tidak valid', status: 400 }
 
@@ -39,7 +38,7 @@ export const userLogin = async (req: Request, res: Response, next: NextFunction)
         const match = await comparePassword({ password, existingPassword: findUserByEmail.password })
         if (!match) throw { msg: 'Password anda salah', status: 400 }
 
-        const setToken = tokenSign({ id: findUserByEmail.email, role: findUserByEmail.role })
+        const setToken = tokenSign({ id: findUserByEmail.id, role: findUserByEmail.role })
 
         res.status(200).json({
             error: false,
@@ -55,4 +54,29 @@ export const userLogin = async (req: Request, res: Response, next: NextFunction)
     }
 }
 
-// export const use
+export const userSetPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { userId } = req.body
+
+        const findUserById = await prisma.user.findFirst({
+            where: {
+                AND: [
+                    { id: userId },
+                    { isUpdatePassword: false }
+                ]
+            }
+        })
+
+        if (!findUserById) throw { msg: 'Permintaan ubah password sudah digunakan. Silakan kirim ulang permintaan untuk mengganti password lagi.' }
+        
+        
+        
+        res.status(200).json({
+            error: false,
+            data: {},
+            message: 'Berhasil'
+        })
+    } catch (error) {
+        next(error)
+    }
+}

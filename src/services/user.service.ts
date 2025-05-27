@@ -1,5 +1,5 @@
 import { readFileSync } from "fs"
-import { tokenSign } from "../utils/verifyToken"
+import { tokenSign } from "../utils/tokenJwt"
 import { compile } from "handlebars"
 import prisma from "../connection/db"
 import { hashPassword } from "../utils/hashPassword"
@@ -34,7 +34,7 @@ export const userRegisterService = async ({
         }
     })
 
-    const setToken = tokenSign({ id: String(dataUser.id), role: dataUser.role })
+    const setToken = tokenSign({ id: Number(dataUser.id), role: dataUser.role })
     const readFileHtml = readFileSync('./src/public/emailHtml/verification.html', 'utf-8')
 
     let compiledHtml: any = compile(readFileHtml)
