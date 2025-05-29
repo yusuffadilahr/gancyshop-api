@@ -2,11 +2,6 @@ import { NextFunction, Request, Response } from "express"
 import { checkCharacter, checkEmail, checkNumberInput } from "../utils/checkInput"
 import { userForgotPasswordService, userLoginService, userRegisterService, userSetPasswordService } from "../services/user.service"
 import prisma from "../connection/db"
-import { comparePassword, hashPassword } from "../utils/hashPassword"
-import { tokenSign, tokenVerify } from "../utils/tokenJwt"
-import { readFileSync } from "fs"
-import { compile } from "handlebars"
-import { transport } from "../utils/transporter"
 
 export const userRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -51,10 +46,11 @@ export const userLogin = async (req: Request, res: Response, next: NextFunction)
 export const userSetPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { authorization } = req.headers
-        const { userId, password } = req.body
+        const userId = req.user?.id
+        const { password } = req.body
         const tokenRequest = authorization?.split(' ')[1]
 
-        const { response } = await userSetPasswordService({ password, tokenRequest: tokenRequest as string, userId })
+        const { response } = await userSetPasswordService({ password, tokenRequest: tokenRequest as string, userId: userId as number })
 
         res.status(200).json({
             error: false,
@@ -76,6 +72,30 @@ export const userForgotPassword = async (req: Request, res: Response, next: Next
             error: false,
             data: {},
             message: 'Berhasil mengirim ulang, harap melakukan pengecekan email anda secara berkala'
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const userDetail = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user?.id
+
+        const findUserById = await prisma.user.findFirst({
+            where: { id: userId }
+        })
+
+        if (!findUserById) throw { msg: 'User tidak tersedia', status: 404 }
+
+        res.status(200).json({
+            error: false,
+            data: {
+                fullname: `${findUserById.firstName} ${findUserById.lastName}`,
+                phoneNumber: findUserById.phoneNumber,
+                email: findUserById.email
+            },
+            message: 'Berhasil mendapatkan data'
         })
     } catch (error) {
         next(error)
