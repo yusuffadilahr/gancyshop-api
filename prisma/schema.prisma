@@ -24,10 +24,11 @@ model User {
   address     String? @db.Text
   role        Role    @default(USER)
 
-  isUpdatePassword Boolean?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  deletedAt        DateTime?
+  isUpdatePassword    Boolean?
+  tokenUpdatePassword String?    @db.Text
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
 }
 
 model Product {
