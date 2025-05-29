@@ -7,6 +7,7 @@ import cors from 'cors'
 import { asciitext } from "./utils/asciitext";
 import { dbConnect } from "./connection/db";
 import router from "./routes";
+import { ITokenVerify } from "./types";
 
 dotenv.config()
 const port = process.env.PORT
@@ -14,6 +15,13 @@ const port = process.env.PORT
 const app: Express = express()
 app.use(express.json())
 
+declare global {
+    namespace Express {
+        interface Request {
+            user?: ITokenVerify
+        }
+    }
+}
 
 const corsOption = {
     origin: '*',

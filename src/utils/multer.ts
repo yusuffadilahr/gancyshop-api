@@ -1,17 +1,18 @@
-import multer from "multer";
+import { Request } from "express";
+import multer, { FileFilterCallback } from "multer";
 
 export const multerStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
+    destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
         cb(null, 'src/public/images')
     },
-    filename: (req, file, cb) => {
+    filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
         const splitOriginalName = file.originalname.split('.')
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
         cb(null, file.fieldname + '-' + uniqueSuffix + '.' + splitOriginalName[splitOriginalName.length - 1])
     }
 })
 
-const fileFilter = (req: any, file: any, cb: any) => {
+const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     const extensionAccepted = ['png', 'jpg', 'jpeg', 'webp', 'svg']
 
     const splitOriginalName = file.originalname.split('.')
@@ -24,5 +25,5 @@ const fileFilter = (req: any, file: any, cb: any) => {
 
 export const uploadMulter = multer({
     storage: multerStorage,
-    fileFilter: fileFilter, limits: { fileSize: 2000000 }
+    fileFilter: fileFilter, limits: { fileSize: 2 * 1024 * 1024 }
 })

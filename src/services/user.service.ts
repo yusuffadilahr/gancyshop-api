@@ -5,24 +5,7 @@ import prisma from "../connection/db"
 import { comparePassword, hashPassword } from "../utils/hashPassword"
 import { transport } from "../utils/transporter"
 import { checkEmail } from "../utils/checkInput"
-
-interface IUserRegisterService {
-    email: string
-    firstName: string
-    lastName: string
-    phoneNumber: string
-}
-
-interface IUserLoginService {
-    email: string
-    password: string
-}
-
-interface IUserSetPasswordService {
-    password: string,
-    userId: number,
-    tokenRequest: string
-}
+import { IUserLoginService, IUserRegisterService, IUserSetPasswordService } from "../types"
 
 export const userRegisterService = async ({
     email,
