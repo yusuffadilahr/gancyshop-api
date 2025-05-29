@@ -1,9 +1,12 @@
 import { NextFunction, Request, Response } from "express"
 import { checkCharacter, checkEmail, checkNumberInput } from "../utils/checkInput"
-import { userRegisterService } from "../services/user.service"
+import { userForgotPasswordService, userLoginService, userRegisterService, userSetPasswordService } from "../services/user.service"
 import prisma from "../connection/db"
-import { comparePassword } from "../utils/hashPassword"
+import { comparePassword, hashPassword } from "../utils/hashPassword"
 import { tokenSign, tokenVerify } from "../utils/tokenJwt"
+import { readFileSync } from "fs"
+import { compile } from "handlebars"
+import { transport } from "../utils/transporter"
 
 export const userRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -29,21 +32,12 @@ export const userRegister = async (req: Request, res: Response, next: NextFuncti
 export const userLogin = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { email, password } = req.body
-        if (!email || !password) throw { msg: 'Isi data terlebih dahulu', status: 400 }
-        if (!checkEmail(email)) throw { msg: 'Format Email tidak valid', status: 400 }
-
-        const findUserByEmail = await prisma.user.findFirst({ where: { email } })
-        if (!findUserByEmail) throw { msg: 'User tidak tersedia, atau email salah', status: 404 }
-
-        const match = await comparePassword({ password, existingPassword: findUserByEmail.password })
-        if (!match) throw { msg: 'Password anda salah', status: 400 }
-
-        const setToken = tokenSign({ id: findUserByEmail.id, role: findUserByEmail.role })
+        const { token, findUserByEmail } = await userLoginService({ email, password })
 
         res.status(200).json({
             error: false,
             data: {
-                token: setToken,
+                token,
                 role: findUserByEmail.role,
                 fullName: `${findUserByEmail.firstName} ${findUserByEmail.lastName}`
             },
@@ -56,25 +50,32 @@ export const userLogin = async (req: Request, res: Response, next: NextFunction)
 
 export const userSetPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { userId } = req.body
+        const { authorization } = req.headers
+        const { userId, password } = req.body
+        const tokenRequest = authorization?.split(' ')[1]
 
-        const findUserById = await prisma.user.findFirst({
-            where: {
-                AND: [
-                    { id: userId },
-                    { isUpdatePassword: false }
-                ]
-            }
-        })
+        const { response } = await userSetPasswordService({ password, tokenRequest: tokenRequest as string, userId })
 
-        if (!findUserById) throw { msg: 'Permintaan ubah password sudah digunakan. Silakan kirim ulang permintaan untuk mengganti password lagi.' }
-        
-        
-        
         res.status(200).json({
             error: false,
             data: {},
-            message: 'Berhasil'
+            message: `Hi ${response.firstName}, Kamu berhasil merubah password. silahkan masuk..`
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const userForgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { email } = req.body
+        await userForgotPasswordService(email)
+
+        res.status(200).json({
+            error: false,
+            data: {},
+            message: 'Berhasil mengirim ulang, harap melakukan pengecekan email anda secara berkala'
         })
     } catch (error) {
         next(error)
