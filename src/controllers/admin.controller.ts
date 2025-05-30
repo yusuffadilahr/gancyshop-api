@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import prisma from "../connection/db";
 import { imageKit } from "../utils/imageKit";
 import { readFileSync } from "fs";
+import { Prisma } from "@prisma/client";
 
 export const createProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -14,17 +15,15 @@ export const createProduct = async (req: Request, res: Response, next: NextFunct
             stock,
             weightGram, } = req.body
 
-        if (!name || !description || !price || !isActive || !stock || !weightGram) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
+        if (!name || !description || !price || !stock || !weightGram) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
         if (!imagesUploaded.images || imagesUploaded.images.length === 0) throw { msg: 'Tidak ada data yang di upload', status: 404 }
 
         const fileBuffer = readFileSync(imagesUploaded.images[0].path)
         if (!!fileBuffer) {
-            var fileUploadImageKit = await imageKit.upload({
+            const fileUploadImageKit = await imageKit.upload({
                 file: fileBuffer,
                 fileName: imagesUploaded.images[0].filename,
                 folder: "/products/body-sparepart"
-            }).catch((err) => {
-                throw { msg: 'Gagal upload ke ImageKit', status: 500 }
             })
 
             if (!fileUploadImageKit) throw { msg: 'Gagal upload data', status: 400 }
@@ -34,7 +33,7 @@ export const createProduct = async (req: Request, res: Response, next: NextFunct
                     description,
                     price: parseFloat(price),
                     imageUrl: fileUploadImageKit.url,
-                    isActive: Boolean(isActive),
+                    isActive: isActive === 'false' ? false : true,
                     stock: Number(stock),
                     weightGram: Number(weightGram),
                     ownerId: Number(userId)
@@ -49,16 +48,80 @@ export const createProduct = async (req: Request, res: Response, next: NextFunct
         })
 
     } catch (error) {
-        const costumError = error as any
-        if (costumError.msg === 'Gagal upload ke ImageKit') {
-            try {
-                await imageKit.deleteFile(fileUploadImageKit!.fileId)
-            } catch (error) {
-                console.log(error, '<<')
-                next(error)
+        console.log(error, '<<')
+
+        next(error)
+    }
+}
+
+export const getAllDataProductAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { search = '', limit = '5', page = '1' } = req.query
+
+        const take = parseInt(limit as string)
+        const skip = (parseInt(page as string) - 1) * take
+
+        let whereClause: Prisma.ProductWhereInput = {
+            deletedAt: null
+        }
+
+        if (search) {
+            whereClause = {
+                OR: [
+                    { name: { contains: search as string } },
+                ]
             }
         }
 
+        const findAllProduct = await prisma.product.findMany({
+            where: whereClause, take, skip,
+            orderBy: { name: 'asc' }
+        })
+
+        const totalCount = await prisma.product.count({
+            where: whereClause
+        })
+
+        const totalPage = Math.ceil(totalCount / Number(limit))
+
+        res.status(200).json({
+            error: false,
+            data: { data: findAllProduct, totalPage },
+            message: 'Berhasil mendapatkan data'
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const updateProductActive = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { isActive } = req.body
+        const { idProduct } = req.params
+
+        const findProduct = await prisma.product.findFirst({
+            where: { id: Number(idProduct) }
+        })
+
+        if (!findProduct || findProduct.deletedAt !== null) throw { msg: 'Produk sudah tidak tersedia', status: 404 }
+
+        await prisma.product.update({
+            where: {
+                id: Number(idProduct)
+            }, data: {
+                isActive: isActive === 'false' ? false : true
+            }
+        })
+
+        res.status(200).json({
+            error: false,
+            data: {},
+            message: isActive === 'true' ?
+                'Produkmu sekarang aktif'
+                : 'Produkmu sudah di non-aktif'
+        })
+
+    } catch (error) {
         next(error)
     }
 }

@@ -6,7 +6,6 @@ export const checkRoleUser = (req: Request, res: Response, next: NextFunction) =
     try {
         const { authorization } = req.headers
         const role = req.user?.role
-        console.log(role, '<<<')
 
         const tokenUser = authorization?.split(' ')[1] as string
         const dataUser = tokenVerify(tokenUser) as ITokenVerify
