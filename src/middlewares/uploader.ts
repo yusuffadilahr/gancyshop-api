@@ -9,7 +9,7 @@ export const uploader = (req: Request, res: Response, next: NextFunction) => {
 
     uploaded(req, res, function (err) {
         try {
-            if (err) throw { msg: err.message, status: err.status }
+            if (err) throw { msg: 'Ada kesalahan saat mengupload file', status: 400 }
 
             const files = (req.files as { [fieldname: string]: Express.Multer.File[] } || {})
 
