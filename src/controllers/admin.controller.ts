@@ -15,10 +15,12 @@ export const createProduct = async (req: Request, res: Response, next: NextFunct
             price,
             isActive,
             stock,
-            weightGram, } = req.body
+            weightGram, 
+            categoryId,
+         } = req.body
 
-        if (!name || !description || !price || !stock || !weightGram) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
-        if (!imagesUploaded.images || imagesUploaded.images.length === 0) throw { msg: 'Tidak ada data yang di upload', status: 404 }
+        if (!name || !description || !price || !stock || !weightGram || !categoryId) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
+        if (!imagesUploaded.images || imagesUploaded.images.length === 0) throw { msg: 'File tidak ditemukan', status: 404 }
 
         const fileBuffer = readFileSync(imagesUploaded.images[0].path)
         if (!!fileBuffer) {
@@ -38,7 +40,8 @@ export const createProduct = async (req: Request, res: Response, next: NextFunct
                     isActive: isActive === 'false' ? false : true,
                     stock: Number(stock),
                     weightGram: Number(weightGram),
-                    ownerId: Number(userId)
+                    ownerId: Number(userId),
+                    categoryId: Number(categoryId)
                 }
             })
 
@@ -154,7 +157,28 @@ export const updateProductInformation = async (req: Request, res: Response, next
 
         if (!findProduct || findProduct.deletedAt !== null) throw { msg: 'Produk sudah tidak tersedia', status: 404 }
         if (!name || !description || !price || !stock || !weightGram) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
-        if (!imagesUploaded.images || imagesUploaded.images.length === 0) throw { msg: 'Tidak ada data yang di upload', status: 404 }
+        if (!imagesUploaded.images || imagesUploaded.images.length === 0) {
+            await prisma.product.update({
+                where: { id: Number(idProduct) },
+                data: {
+                    name,
+                    description,
+                    price: parseFloat(price),
+                    isActive: isActive === 'false' ? false : true,
+                    stock: Number(stock),
+                    weightGram: Number(weightGram),
+                    imageUrl: findProduct.imageUrl
+                }
+            })
+
+            res.status(200).json({
+                error: false,
+                data: {},
+                message: 'Berhasil mengupdate data'
+            })
+
+            return;
+        }
 
         const fileNameOnDb = findProduct.imageUrl?.split('/').pop()
         const findFileName = await imageKit.listFiles({

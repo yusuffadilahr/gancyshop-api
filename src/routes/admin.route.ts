@@ -7,7 +7,7 @@ import { createProduct, getAllDataProductAdmin, updateProductActive, updateProdu
 export const adminRoute = Router()
 
 adminRoute.post('/add-products', verifyToken, checkRoleUser, uploader, createProduct)
-adminRoute.post('/edit-product/:idProduct', verifyToken, checkRoleUser, uploader, updateProductInformation)
+adminRoute.patch('/edit-product/:idProduct', verifyToken, checkRoleUser, uploader, updateProductInformation)
 
 adminRoute.get('/all-products', verifyToken, checkRoleUser, getAllDataProductAdmin)
 adminRoute.patch('/update-is-active/:idProduct', verifyToken, checkRoleUser, updateProductActive)

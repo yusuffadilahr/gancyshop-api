@@ -11,9 +11,6 @@ export const uploader = (req: Request, res: Response, next: NextFunction) => {
         try {
             if (err) throw { msg: 'Ada kesalahan saat mengupload file', status: 400 }
 
-            const files = (req.files as { [fieldname: string]: Express.Multer.File[] } || {})
-
-            if (!files.images || files.images.length === 0) throw { msg: 'File tidak ditemukan', status: 404 }
             if (userId && userRole) {
                 const dataUser = req.user
 
