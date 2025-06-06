@@ -50,10 +50,37 @@ model Product {
   updatedAt  DateTime  @updatedAt
   deletedAt  DateTime?
 
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
   ownerId Int
   owner   User @relation(fields: [ownerId], references: [id])
 
   cartItems CartItem[]
+}
+
+model Category {
+  id                  Int    @id @default(autoincrement())
+  categoryName        String
+  categoryMotorcyleId Int?
+
+  Product           Product[]
+  CategoryMotorcyle CategoryMotorcyle? @relation(fields: [categoryMotorcyleId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model CategoryMotorcyle {
+  id             Int        @id @default(autoincrement())
+  motorCycleName String?
+  releaseYear    Int?
+  category       Category[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 model Cart {
