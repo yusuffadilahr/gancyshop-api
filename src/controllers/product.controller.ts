@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 
 export const getAllProductPublic = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { limit = '6', page = '1', search } = req.query
+        const { limit = '5', page = '1', search } = req.query
 
         const take = parseInt(limit as string)
         const skip = (parseInt(page as string) - 1) * take
@@ -12,7 +12,7 @@ export const getAllProductPublic = async (req: Request, res: Response, next: Nex
         let whereClause: Prisma.ProductWhereInput = {
             AND: [
                 { deletedAt: null },
-                { isActive: true }
+                { isActive: true },
             ]
         }
 
@@ -26,7 +26,10 @@ export const getAllProductPublic = async (req: Request, res: Response, next: Nex
         }
 
         const findAllProduct = await prisma.product.findMany({
-            where: whereClause, take, skip, orderBy: { createdAt: 'desc' }
+            where: whereClause, take, skip, orderBy: { createdAt: 'desc' },
+            include: {
+                category: true
+            }
         })
 
         if (findAllProduct.length === 0) throw { msg: 'Data tidak tersedia/kosong', status: 404 }
