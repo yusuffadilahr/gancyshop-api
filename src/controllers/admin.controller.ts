@@ -15,9 +15,9 @@ export const createProduct = async (req: Request, res: Response, next: NextFunct
             price,
             isActive,
             stock,
-            weightGram, 
+            weightGram,
             categoryId,
-         } = req.body
+        } = req.body
 
         if (!name || !description || !price || !stock || !weightGram || !categoryId) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
         if (!imagesUploaded.images || imagesUploaded.images.length === 0) throw { msg: 'File tidak ditemukan', status: 404 }
@@ -82,7 +82,7 @@ export const getAllDataProductAdmin = async (req: Request, res: Response, next: 
 
         const findAllProduct = await prisma.product.findMany({
             where: whereClause, take, skip,
-            orderBy: { name: 'asc' }
+            orderBy: { createdAt: 'desc' }
         })
 
         const totalCount = await prisma.product.count({
@@ -225,6 +225,42 @@ export const updateProductInformation = async (req: Request, res: Response, next
 
     } catch (error) {
         rmSync(imagesUploaded.images[0].path)
+        next(error)
+    }
+}
+
+export const deleteProductInformation = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { idProduct } = req.params
+        const findProduct = await prisma.product.findFirst({
+            where: {
+                AND: [
+                    { id: Number(idProduct) },
+                    { deletedAt: null }
+                ]
+            }
+        })
+
+        if (!findProduct) throw { msg: 'Produk sudah tidak tersedia', status: 404 }
+
+        const updatedProduct = await prisma.product.update({
+            where: {
+                id: Number(idProduct)
+            },
+            data: {
+                isActive: false,
+                deletedAt: new Date()
+            }
+        })
+
+        if (!updatedProduct) throw { msg: 'Gagal menghapus produk', status: 400 }
+
+        res.status(200).json({
+            error: false,
+            data: {},
+            message: 'Berhasil menghapus data'
+        })
+    } catch (error) {
         next(error)
     }
 }
