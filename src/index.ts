@@ -43,7 +43,7 @@ app.use('/api', router)
 app.use((error: IError, req: Request, res: Response, next: NextFunction) => {
     res.status(error.status || 500).json({
         error: true,
-        message: error.msg || 'Something went wrong!',
+        message: error.message || 'Something went wrong!',
         data: {}
     })
 })
