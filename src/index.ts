@@ -8,6 +8,7 @@ import { asciitext } from "./utils/asciitext";
 import { dbConnect } from "./connection/db";
 import router from "./routes";
 import { ITokenVerify } from "./types";
+import path from "path";
 
 dotenv.config()
 const port = process.env.PORT
@@ -48,6 +49,7 @@ app.use((error: IError, req: Request, res: Response, next: NextFunction) => {
     })
 })
 
+app.use('/public', express.static(path.join(__dirname, 'public')));
 dbConnect()
 
 app.listen(port, () => {
