@@ -35,7 +35,7 @@ export const getAllProductPublic = async (req: Request, res: Response, next: Nex
                 AND: [
                     ...(search ? [{ name: { contains: search as string } }] : []),
                     ...(category ? [{ categoryId: Number(category) }] : []),
-                    
+
                     ...(tanggalDibuat ? [{
                         createdAt: {
                             gte: new Date(tanggalDibuat as string),
@@ -56,7 +56,7 @@ export const getAllProductPublic = async (req: Request, res: Response, next: Nex
                             lte: Number(maxWeight)
                         }
                     }] : []),
-                    
+
                     ...(stock ? [{ stock: stockValidation }] : [])
                 ]
             }
@@ -98,6 +98,30 @@ export const getCategoryForFilterProductPublic = async (req: Request, res: Respo
             message: 'Berhasil mendapatkan kategori',
             data: findAllCategory
         })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const getProductByIdPublic = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { idProduct } = req.params
+        if (!idProduct) throw { msg: 'Ada kesalahan dari sisi server', status: 500 }
+
+        const findProductById = await prisma.product.findFirst({
+            where: {
+                id: Number(idProduct)
+            }
+        })
+
+        if (!findProductById) throw { msg: 'Data produk tidak tersedia', status: 404 }
+
+        res.status(200).json({
+            error: false,
+            data: findProductById,
+            message: 'Berhasil mendapatkan data produk'
+        })
+
     } catch (error) {
         next(error)
     }
