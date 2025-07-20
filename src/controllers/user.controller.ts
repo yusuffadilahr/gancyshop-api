@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express"
 import { checkCharacter, checkEmail, checkNumberInput } from "../utils/checkInput"
 import { userForgotPasswordService, userLoginService, userRegisterService, userSetPasswordService } from "../services/user.service"
 import prisma from "../connection/db"
+import { Role } from "@prisma/client"
 
 export const userRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -97,6 +98,28 @@ export const userDetail = async (req: Request, res: Response, next: NextFunction
             },
             message: 'Berhasil mendapatkan data'
         })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const userChatByUserId = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dataUser = req?.user
+
+        if (!dataUser?.id) throw { msg: 'Data user tidak tersedia', status: 404 }
+
+        const findChat = await prisma.messageCustomer.findMany({
+            where: { userId: Number(dataUser?.id) },
+            orderBy: { createdAt: 'asc' }
+        })
+
+        res.status(200).json({
+            error: false,
+            message: 'Berhasil menampilkan data chat',
+            data: findChat || []
+        })
+
     } catch (error) {
         next(error)
     }
