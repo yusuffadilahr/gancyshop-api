@@ -31,8 +31,10 @@ model User {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  products Product[]
-  cart     Cart?
+  products        Product[]
+  cart            Cart?
+  MessageCustomer MessageCustomer[]
+  ChatSession     ChatSession[]
 }
 
 model Product {
@@ -84,11 +86,13 @@ model CategoryMotorcyle {
 }
 
 model Cart {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   items CartItem[]
 }
@@ -105,4 +109,32 @@ model CartItem {
 enum Role {
   USER
   ADMIN
+}
+
+model MessageCustomer {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  message String
+  role    Role
+
+  ChatSession   ChatSession? @relation(fields: [chatSessionId], references: [id])
+  chatSessionId Int?
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+}
+
+model ChatSession {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  messages MessageCustomer[]
 }
