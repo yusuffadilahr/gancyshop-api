@@ -70,7 +70,7 @@ declare global {
 }
 
 const corsOption = {
-    origin: '*',
+    origin: 'http://localhost:3000', // devel
     credentials: true
 }
 
