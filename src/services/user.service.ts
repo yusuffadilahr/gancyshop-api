@@ -1,5 +1,5 @@
 import { readFileSync } from "fs"
-import { tokenSign } from "../utils/tokenJwt"
+import { refrestTokenSign, tokenSign } from "../utils/tokenJwt"
 import { compile } from "handlebars"
 import prisma from "../connection/db"
 import { comparePassword, hashPassword } from "../utils/hashPassword"
@@ -73,8 +73,9 @@ export const userLoginService = async ({
     if (!match) throw { msg: 'Password anda salah', status: 400 }
 
     const setToken = tokenSign({ id: findUserByEmail.id, role: findUserByEmail.role })
+    const setRefreshToken = refrestTokenSign({ id: findUserByEmail.id, role: findUserByEmail.role })
 
-    return { token: setToken, findUserByEmail }
+    return { token: setToken, findUserByEmail, refreshToken: setRefreshToken }
 }
 
 export const userSetPasswordService = async ({

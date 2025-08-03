@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express"
 import { checkCharacter, checkEmail, checkNumberInput } from "../utils/checkInput"
 import { userForgotPasswordService, userLoginService, userRegisterService, userSetPasswordService } from "../services/user.service"
 import prisma from "../connection/db"
-import { Role } from "@prisma/client"
 
 export const userRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -28,12 +27,13 @@ export const userRegister = async (req: Request, res: Response, next: NextFuncti
 export const userLogin = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { email, password } = req.body
-        const { token, findUserByEmail } = await userLoginService({ email, password })
+        const { token, findUserByEmail, refreshToken } = await userLoginService({ email, password })
 
         res.status(200).json({
             error: false,
             data: {
                 token,
+                refreshToken,
                 role: findUserByEmail.role,
                 fullName: `${findUserByEmail.firstName} ${findUserByEmail.lastName}`
             },
@@ -41,6 +41,14 @@ export const userLogin = async (req: Request, res: Response, next: NextFunction)
         })
     } catch (error) {
         next(error)
+    }
+}
+
+export const userRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+
+    } catch (error) {
+
     }
 }
 
