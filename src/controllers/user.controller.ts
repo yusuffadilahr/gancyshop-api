@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express"
 import { checkCharacter, checkEmail, checkNumberInput } from "../utils/checkInput"
 import { userForgotPasswordService, userLoginService, userRegisterService, userSetPasswordService } from "../services/user.service"
 import prisma from "../connection/db"
+import { refrestTokenSign, tokenSign, tokenVerify } from "../utils/tokenJwt"
+import { ITokenVerify } from "../types"
 
 export const userRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -46,9 +48,20 @@ export const userLogin = async (req: Request, res: Response, next: NextFunction)
 
 export const userRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const { tokenRefresh } = req.params
+        const dataUser = tokenVerify(tokenRefresh) as ITokenVerify
 
+        console.log(req.cookies, '<< liat dah ini apaan')
+        const newAccessToken = tokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN" })
+        const newRefreshToken = refrestTokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN" })
+
+        res.status(200).json({
+            error: false,
+            message: 'Berhasil merefresh token anda',
+            data: { accessToken: newAccessToken, refreshToken: newRefreshToken }
+        })
     } catch (error) {
-
+        next(error)
     }
 }
 
@@ -117,7 +130,7 @@ export const userChatByUserId = async (req: Request, res: Response, next: NextFu
 
         if (!dataUser?.id) throw { msg: 'Data user tidak tersedia', status: 404 }
 
-        const findChat = await prisma.messageCustomer.findMany({
+        const findChat = await prisma.messagecustomer.findMany({
             where: { userId: Number(dataUser?.id) },
             orderBy: { createdAt: 'asc' }
         })

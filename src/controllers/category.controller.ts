@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client"
 
 export const getCategoryMotorCycle = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const findAllCategory = await prisma.categoryMotorcyle.findMany()
+        const findAllCategory = await prisma.categorymotorcyle.findMany()
         if (findAllCategory.length === 0) throw { msg: 'Data tidak tersedia', status: 404 }
 
         res.status(200).json({
@@ -23,7 +23,7 @@ export const getCategoryProductById = async (req: Request, res: Response, next: 
 
         const findAllCategoryByCategoryMotor = await prisma.category.findMany({
             where: {
-                categoryMotorcyleId: Number(categoryMotorId)
+                categoryMotorcycleId: Number(categoryMotorId)
             }
         })
 
@@ -46,7 +46,7 @@ export const getCategoryProduct = async (req: Request, res: Response, next: Next
         const take = parseInt(limit as string)
         const skip = (parseInt(page as string) - 1) * take
 
-        let whereClause: Prisma.CategoryWhereInput = {
+        let whereClause: Prisma.categoryWhereInput = {
             deletedAt: null
         }
 
@@ -54,7 +54,7 @@ export const getCategoryProduct = async (req: Request, res: Response, next: Next
             whereClause = {
                 ...whereClause,
                 categoryName: { contains: search as string },
-                CategoryMotorcyle: {
+                categorymotorcyle: {
                     motorCycleName: { contains: search as string }
                 }
             }
@@ -62,7 +62,7 @@ export const getCategoryProduct = async (req: Request, res: Response, next: Next
 
         const findAllCategory = await prisma.category.findMany({
             include: {
-                CategoryMotorcyle: true
+                categorymotorcyle: true
             },
             where: whereClause, take, skip,
             orderBy: { createdAt: 'desc' }
@@ -86,7 +86,7 @@ export const createCategory = async (req: Request, res: Response, next: NextFunc
         if (!categoryName) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
         if (!!dataMotorOptional && !!releaseYearOptional) {
             await prisma.$transaction(async (tx) => {
-                const dataCategoryMotor = await tx.categoryMotorcyle.create({
+                const dataCategoryMotor = await tx.categorymotorcyle.create({
                     data: {
                         motorCycleName: dataMotorOptional,
                         releaseYear: Number(releaseYearOptional),
@@ -98,7 +98,7 @@ export const createCategory = async (req: Request, res: Response, next: NextFunc
                 await tx.category.create({
                     data: {
                         categoryName,
-                        categoryMotorcyleId: dataCategoryMotor.id
+                        categoryMotorcycleId: dataCategoryMotor.id
                     }
                 })
             })
@@ -115,7 +115,7 @@ export const createCategory = async (req: Request, res: Response, next: NextFunc
         const createDataCategory = await prisma.category.create({
             data: {
                 categoryName,
-                categoryMotorcyleId: Number(idCategoryMotor),
+                categoryMotorcycleId: Number(idCategoryMotor),
             }
         })
 

@@ -39,7 +39,7 @@ io.on('connection', (socket) => {
         }
 
         try {
-            const created = await prisma.messageCustomer.create({
+            const created = await prisma.messagecustomer.create({
                 data: {
                     message,
                     userId: dataUser?.id,

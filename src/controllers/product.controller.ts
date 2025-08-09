@@ -15,7 +15,7 @@ export const getAllProductPublic = async (req: Request, res: Response, next: Nex
         const take = parseInt(limit as string)
         const skip = (parseInt(page as string) - 1) * take
 
-        let whereClause: Prisma.ProductWhereInput = {
+        let whereClause: Prisma.productWhereInput = {
             AND: [
                 { deletedAt: null },
                 { isActive: true },
