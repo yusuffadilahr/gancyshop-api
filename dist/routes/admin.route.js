@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.adminRoute = void 0;
+const express_1 = require("express");
+const verifyToken_1 = require("../middlewares/verifyToken");
+const checkUser_1 = require("../middlewares/checkUser");
+const uploader_1 = require("../middlewares/uploader");
+const admin_controller_1 = require("../controllers/admin.controller");
+exports.adminRoute = (0, express_1.Router)();
+exports.adminRoute.post('/add-products', verifyToken_1.verifyToken, checkUser_1.checkRoleUser, uploader_1.uploader, admin_controller_1.createProduct);
+exports.adminRoute.patch('/edit-product/:idProduct', verifyToken_1.verifyToken, checkUser_1.checkRoleUser, uploader_1.uploader, admin_controller_1.updateProductInformation);
+exports.adminRoute.patch('/delete-product/:idProduct', verifyToken_1.verifyToken, checkUser_1.checkRoleUser, admin_controller_1.deleteProductInformation);
+exports.adminRoute.get('/all-products', verifyToken_1.verifyToken, checkUser_1.checkRoleUser, admin_controller_1.getAllDataProductAdmin);
+exports.adminRoute.patch('/update-is-active/:idProduct', verifyToken_1.verifyToken, checkUser_1.checkRoleUser, admin_controller_1.updateProductActive);

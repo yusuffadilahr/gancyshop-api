@@ -12,6 +12,7 @@ import path from "path";
 import http from 'http'
 import { Server as SocketIO } from "socket.io";
 import { tokenVerify } from "./utils/tokenJwt";
+import { logger } from "./utils/logger";
 
 dotenv.config()
 const port = process.env.PORT
@@ -46,7 +47,7 @@ io.on('connection', (socket) => {
                     role: role || 'USER',
                 }
             })
-            
+
             socket.emit('chat:incoming', created)
             cb({ error: false, status: 201, message: 'Berhasil' })
         } catch (err) {
@@ -70,13 +71,13 @@ declare global {
 }
 
 const corsOption = {
-    origin: 'http://localhost:3000', // devel
+    origin: '*', // devel
     credentials: true
 }
 
 app.use(cors(corsOption))
 
-app.use('/welcome-in-web-by-serverside', (req: Request, res: Response, next: NextFunction) => {
+app.use('/', (req: Request, res: Response, next: NextFunction) => {
     res.send('<h1>Welcoming bray</h1>')
 })
 
@@ -87,9 +88,10 @@ interface IError extends Error {
 
 app.use('/api', router)
 app.use((error: IError, req: Request, res: Response, next: NextFunction) => {
+    logger.error(`ERROR ${error.status || 500} ${error.msg} - URL: ${req.method} ${req.url} ERROR_SERVER: ${error?.message || ''}`);
     res.status(error.status || 500).json({
         error: true,
-        message: error.message || 'Something went wrong!',
+        message: error.msg || 'Something went wrong!',
         data: {}
     })
 })
@@ -97,6 +99,11 @@ app.use((error: IError, req: Request, res: Response, next: NextFunction) => {
 app.use('/public', express.static(path.join(__dirname, 'public')));
 dbConnect()
 
-server.listen(port, () => {
-    console.log(asciitext)
-})
+if (port) {
+    server.listen(port, () => {
+        console.log(asciitext);
+        console.log(`Server running on port ${port}`);
+    });
+} else {
+    module.exports = app;
+}
