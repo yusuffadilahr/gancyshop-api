@@ -100,10 +100,10 @@ const corsOption = {
     credentials: true
 };
 app.use((0, cors_1.default)(corsOption));
+app.use('/api', routes_1.default);
 app.use('/', (req, res, next) => {
     res.send('<h1>Welcoming bray</h1>');
 });
-app.use('/api', routes_1.default);
 app.use((error, req, res, next) => {
     logger_1.logger.error(`ERROR ${error.status || 500} ${error.msg} - URL: ${req.method} ${req.url} ERROR_SERVER: ${(error === null || error === void 0 ? void 0 : error.message) || ''}`);
     res.status(error.status || 500).json({
