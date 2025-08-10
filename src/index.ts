@@ -83,9 +83,9 @@ interface IError extends Error {
 }
 
 app.use('/api', router)
-app.use('/', (req: Request, res: Response, next: NextFunction) => {
-    res.send('<h1>Welcoming bray</h1>')
-})
+// app.use('/', (req: Request, res: Response, next: NextFunction) => {
+//     res.send('<h1>Welcoming bray</h1>')
+// })
 
 app.use((error: IError, req: Request, res: Response, next: NextFunction) => {
     logger.error(`ERROR ${error.status || 500} ${error.msg} - URL: ${req.method} ${req.url} ERROR_SERVER: ${error?.message || ''}`);
