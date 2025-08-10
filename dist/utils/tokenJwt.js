@@ -13,8 +13,8 @@ const tokenVerify = (token) => {
     return decoded;
 };
 exports.tokenVerify = tokenVerify;
-const tokenSign = ({ id, role }) => {
-    return jsonwebtoken_1.default.sign({ id, role }, jwtSecretKey, { expiresIn: '5m' });
+const tokenSign = ({ id, role, expires = '5m' }) => {
+    return jsonwebtoken_1.default.sign({ id, role }, jwtSecretKey, { expiresIn: expires });
 };
 exports.tokenSign = tokenSign;
 const refrestTokenSign = ({ id, role }) => {

@@ -64,8 +64,7 @@ const userRefreshToken = (req, res, next) => __awaiter(void 0, void 0, void 0, f
     try {
         const { tokenRefresh } = req.params;
         const dataUser = (0, tokenJwt_1.tokenVerify)(tokenRefresh);
-        console.log(req.cookies, '<< liat dah ini apaan');
-        const newAccessToken = (0, tokenJwt_1.tokenSign)({ id: dataUser === null || dataUser === void 0 ? void 0 : dataUser.id, role: dataUser === null || dataUser === void 0 ? void 0 : dataUser.role });
+        const newAccessToken = (0, tokenJwt_1.tokenSign)({ id: dataUser === null || dataUser === void 0 ? void 0 : dataUser.id, role: dataUser === null || dataUser === void 0 ? void 0 : dataUser.role, expires: '15m' });
         const newRefreshToken = (0, tokenJwt_1.refrestTokenSign)({ id: dataUser === null || dataUser === void 0 ? void 0 : dataUser.id, role: dataUser === null || dataUser === void 0 ? void 0 : dataUser.role });
         res.status(200).json({
             error: false,
