@@ -51,8 +51,7 @@ export const userRefreshToken = async (req: Request, res: Response, next: NextFu
         const { tokenRefresh } = req.params
         const dataUser = tokenVerify(tokenRefresh) as ITokenVerify
 
-        console.log(req.cookies, '<< liat dah ini apaan')
-        const newAccessToken = tokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN" })
+        const newAccessToken = tokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN", expires: '15m' })
         const newRefreshToken = refrestTokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN" })
 
         res.status(200).json({
