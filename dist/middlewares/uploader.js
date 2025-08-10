@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploader = void 0;
 const multer_1 = require("../utils/multer");
+const logger_1 = require("../utils/logger");
 const uploader = (req, res, next) => {
     var _a, _b;
     const uploaded = multer_1.uploadMulter.fields([{ name: 'images', maxCount: 1 }]);
@@ -9,6 +10,7 @@ const uploader = (req, res, next) => {
     const userRole = (_b = req.user) === null || _b === void 0 ? void 0 : _b.role;
     uploaded(req, res, function (err) {
         try {
+            logger_1.logger.error(`ERROR MULTER: ${err} <--`);
             if (err)
                 throw { msg: 'Ada kesalahan saat mengupload file', status: 400 };
             if (userId && userRole) {

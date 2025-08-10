@@ -63,8 +63,12 @@ exports.userLogin = userLogin;
 const userRefreshToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { tokenRefresh } = req.params;
+        if (!tokenRefresh)
+            throw { msg: 'Refresh token tidak ditemukan', status: 400 };
         const dataUser = (0, tokenJwt_1.tokenVerify)(tokenRefresh);
-        const newAccessToken = (0, tokenJwt_1.tokenSign)({ id: dataUser === null || dataUser === void 0 ? void 0 : dataUser.id, role: dataUser === null || dataUser === void 0 ? void 0 : dataUser.role, expires: '15m' });
+        if (!dataUser)
+            throw { msg: 'Refresh token tidak valid', status: 400 };
+        const newAccessToken = (0, tokenJwt_1.tokenSign)({ id: dataUser === null || dataUser === void 0 ? void 0 : dataUser.id, role: dataUser === null || dataUser === void 0 ? void 0 : dataUser.role, expires: '12h' });
         const newRefreshToken = (0, tokenJwt_1.refrestTokenSign)({ id: dataUser === null || dataUser === void 0 ? void 0 : dataUser.id, role: dataUser === null || dataUser === void 0 ? void 0 : dataUser.role });
         res.status(200).json({
             error: false,
