@@ -1,6 +1,7 @@
 export interface ITokenVerify {
     id: number,
     role: string,
+    type?: string
     iat: number,
     exp: number
 }

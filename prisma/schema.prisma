@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  // output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -14,127 +7,139 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          Int     @id @default(autoincrement())
-  email       String  @unique
-  password    String
-  firstName   String
-  lastName    String
-  phoneNumber String?
-  address     String? @db.Text
-  role        Role    @default(USER)
-
-  isUpdatePassword    Boolean?
-  tokenUpdatePassword String?  @db.Text
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+model cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int        @unique(map: "Cart_userId_key")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime?
   deletedAt DateTime?
+  user      user       @relation(fields: [userId], references: [id], map: "Cart_userId_fkey")
+  cartitem  cartitem[]
 
-  products        Product[]
-  cart            Cart?
-  MessageCustomer MessageCustomer[]
-  ChatSession     ChatSession[]
+  @@map("cart")
 }
 
-model Product {
-  id          Int     @id @default(autoincrement())
+model cartitem {
+  id        Int     @id @default(autoincrement())
+  cartId    Int
+  productId Int
+  quantity  Int
+  cart      cart    @relation(fields: [cartId], references: [id], map: "CartItem_cartId_fkey")
+  product   product @relation(fields: [productId], references: [id], map: "CartItem_productId_fkey")
+
+  @@index([cartId], map: "CartItem_cartId_fkey")
+  @@index([productId], map: "CartItem_productId_fkey")
+  @@map("cartitem")
+}
+
+model category {
+  id                   Int                @id @default(autoincrement())
+  categoryName         String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime?
+  deletedAt            DateTime?
+  categoryMotorcycleId Int?
+  categorymotorcyle    categorymotorcyle? @relation(fields: [categoryMotorcycleId], references: [id], map: "Category_categoryMotorcycleId_fkey")
+  product              product[]
+
+  @@index([categoryMotorcycleId], map: "Category_categoryMotorcycleId_fkey")
+  @@map("category")
+}
+
+model categorymotorcyle {
+  id             Int        @id @default(autoincrement())
+  motorCycleName String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime?
+  deletedAt      DateTime?
+  releaseYear    Int?
+  category       category[]
+
+  @@map("categorymotorcycle")
+}
+
+model chatsession {
+  id              Int               @id @default(autoincrement())
+  userId          Int
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime?
+  deletedAt       DateTime?
+  user            user              @relation(fields: [userId], references: [id], map: "ChatSession_userId_fkey")
+  messagecustomer messagecustomer[]
+
+  @@index([userId], map: "ChatSession_userId_fkey")
+  @@map("chatsession")
+}
+
+model messagecustomer {
+  id            Int                  @id @default(autoincrement())
+  userId        Int
+  message       String
+  role          messagecustomer_role
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime?
+  deletedAt     DateTime?
+  chatSessionId Int?
+  chatsession   chatsession?         @relation(fields: [chatSessionId], references: [id], map: "MessageCustomer_chatSessionId_fkey")
+  user          user                 @relation(fields: [userId], references: [id], map: "MessageCustomer_userId_fkey")
+
+  @@index([chatSessionId], map: "MessageCustomer_chatSessionId_fkey")
+  @@index([userId], map: "MessageCustomer_userId_fkey")
+  @@map("messagecustomer")
+}
+
+model product {
+  id          Int        @id @default(autoincrement())
   name        String
   description String?
   price       Float
-  stock       Int     @default(0)
+  stock       Int        @default(0)
   imageUrl    String?
+  weightGram  Int        @default(0)
+  isActive    Boolean?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime?
+  deletedAt   DateTime?
+  ownerId     Int
   fileId      String?
+  categoryId  Int
+  cartitem    cartitem[]
+  category    category   @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
+  user        user       @relation(fields: [ownerId], references: [id], map: "Product_ownerId_fkey")
 
-  weightGram Int       @default(0)
-  isActive   Boolean?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
-
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  ownerId Int
-  owner   User @relation(fields: [ownerId], references: [id])
-
-  cartItems CartItem[]
+  @@index([categoryId], map: "Product_categoryId_fkey")
+  @@index([ownerId], map: "Product_ownerId_fkey")
+  @@map("product")
 }
 
-model Category {
-  id                  Int    @id @default(autoincrement())
-  categoryName        String
-  categoryMotorcyleId Int?
+model user {
+  id                  Int               @id @default(autoincrement())
+  email               String            @unique(map: "User_email_key")
+  password            String
+  firstName           String
+  lastName            String
+  phoneNumber         String?
+  role                user_role         @default(USER)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime?
+  deletedAt           DateTime?
+  address             String?           @db.Text
+  isUpdatePassword    Boolean?
+  tokenUpdatePassword String?           @db.Text
+  cart                cart?
+  chatsession         chatsession[]
+  messagecustomer     messagecustomer[]
+  product             product[]
 
-  Product           Product[]
-  CategoryMotorcyle CategoryMotorcyle? @relation(fields: [categoryMotorcyleId], references: [id])
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  @@map("user")
 }
 
-model CategoryMotorcyle {
-  id             Int        @id @default(autoincrement())
-  motorCycleName String?
-  releaseYear    Int?
-  category       Category[]
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-}
-
-model Cart {
-  id     Int  @id @default(autoincrement())
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  items CartItem[]
-}
-
-model CartItem {
-  id        Int     @id @default(autoincrement())
-  cartId    Int
-  cart      Cart    @relation(fields: [cartId], references: [id])
-  productId Int
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
-}
-
-enum Role {
+enum messagecustomer_role {
   USER
   ADMIN
 }
 
-model MessageCustomer {
-  id     Int  @id @default(autoincrement())
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
-
-  message String
-  role    Role
-
-  ChatSession   ChatSession? @relation(fields: [chatSessionId], references: [id])
-  chatSessionId Int?
-  
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  deletedAt     DateTime?
-}
-
-model ChatSession {
-  id     Int  @id @default(autoincrement())
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  messages MessageCustomer[]
+enum user_role {
+  USER
+  ADMIN
 }
