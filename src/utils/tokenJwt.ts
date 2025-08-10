@@ -9,8 +9,8 @@ export const tokenVerify = (token: string) => {
     return decoded
 }
 
-export const tokenSign = ({ id, role }: { id: number, role: 'USER' | 'ADMIN' }) => {
-    return jwt.sign({ id, role }, jwtSecretKey, { expiresIn: '5m' })
+export const tokenSign = ({ id, role, expires = '5m' }: { id: number, role: 'USER' | 'ADMIN', expires?: any }) => {
+    return jwt.sign({ id, role }, jwtSecretKey, { expiresIn: expires })
 }
 
 export const refrestTokenSign = ({ id, role }: { id: number, role: 'USER' | 'ADMIN' }) => {
