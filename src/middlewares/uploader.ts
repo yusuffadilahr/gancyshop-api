@@ -1,6 +1,7 @@
 
 import { NextFunction, Request, Response } from 'express';
 import { uploadMulter } from '../utils/multer';
+import { logger } from '../utils/logger';
 
 export const uploader = (req: Request, res: Response, next: NextFunction) => {
     const uploaded = uploadMulter.fields([{ name: 'images', maxCount: 1 }])
@@ -9,6 +10,7 @@ export const uploader = (req: Request, res: Response, next: NextFunction) => {
 
     uploaded(req, res, function (err) {
         try {
+            logger.error(`ERROR MULTER: ${err} <--`)
             if (err) throw { msg: 'Ada kesalahan saat mengupload file', status: 400 }
 
             if (userId && userRole) {

@@ -49,9 +49,12 @@ export const userLogin = async (req: Request, res: Response, next: NextFunction)
 export const userRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { tokenRefresh } = req.params
-        const dataUser = tokenVerify(tokenRefresh) as ITokenVerify
+        if (!tokenRefresh) throw { msg: 'Refresh token tidak ditemukan', status: 400 }
 
-        const newAccessToken = tokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN", expires: '15m' })
+        const dataUser = tokenVerify(tokenRefresh) as ITokenVerify
+        if (!dataUser) throw { msg: 'Refresh token tidak valid', status: 400 }
+
+        const newAccessToken = tokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN", expires: '12h' })
         const newRefreshToken = refrestTokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN" })
 
         res.status(200).json({

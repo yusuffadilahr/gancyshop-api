@@ -1,9 +1,11 @@
 import { Request } from "express";
 import multer, { FileFilterCallback } from "multer";
+import path from "path";
 
 export const multerStorage = multer.diskStorage({
     destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
-        cb(null, 'src/public/images')
+        const uploadPath = path.join(__dirname, '../../public/images')
+        cb(null, uploadPath)
     },
     filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
         const splitOriginalName = file.originalname.split('.')
