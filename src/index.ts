@@ -13,6 +13,7 @@ import http from 'http'
 import { Server as SocketIO } from "socket.io";
 import { tokenVerify } from "./utils/tokenJwt";
 import { logger } from "./utils/logger";
+import { testConnection } from "./connection/c";
 
 dotenv.config()
 const port = process.env.PORT
@@ -71,7 +72,7 @@ declare global {
 }
 
 const corsOption = {
-    origin: '*', // devel
+    origin: process.env.WEB_URL, // devel
     credentials: true
 }
 
@@ -85,15 +86,17 @@ interface IError extends Error {
 app.use('/api', router)
 app.use((error: IError, req: Request, res: Response, next: NextFunction) => {
     logger.error(`ERROR ${error.status || 500} ${error.msg} - URL: ${req.method} ${req.url} ERROR_SERVER: ${error?.message || ''}`);
-    res.status(error.status || 500).json({
+    res.status(error.status).json({
         error: true,
         message: error.msg || 'Something went wrong!',
-        data: {}
+        data: {},
+        statusCode: error.status || 500
     })
 })
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 dbConnect()
+testConnection()
 
 if (port) {
     server.listen(port, () => {

@@ -4,22 +4,23 @@ import { userForgotPasswordService, userLoginService, userRegisterService, userS
 import prisma from "../connection/db"
 import { refrestTokenSign, tokenSign, tokenVerify } from "../utils/tokenJwt"
 import { ITokenVerify } from "../types"
+import { addDays } from "date-fns"
 
 export const userRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { firstName, lastName, email, phoneNumber } = req.body
+        const { firstName, lastName, email, phoneNumber, password } = req.body
 
-        if (!firstName || !lastName || !email || !phoneNumber) throw { msg: 'Harap diisi terlebih dahulu', status: 404 }
+        if (!firstName || !lastName || !email || !phoneNumber || !password) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
         if (!checkCharacter(firstName) || !checkCharacter(lastName)) throw { msg: 'Nama tidak boleh mengandung karakter atau angka', status: 400 }
         if (!checkNumberInput(phoneNumber)) throw { msg: 'No Telpon hanya berupa angka 0-9', status: 400 }
         if (!checkEmail(email)) throw { msg: 'Format email salah', status: 400 }
 
-        await userRegisterService({ email, firstName, lastName, phoneNumber })
+        await userRegisterService({ email, firstName, lastName, phoneNumber, password })
 
         res.status(200).json({
             error: false,
             data: {},
-            message: 'Berhasil membuat akun, silahkan cek email untuk set password'
+            message: 'Berhasil membuat akun, silahkan masuk'
         })
     } catch (error) {
         next(error)
@@ -31,36 +32,23 @@ export const userLogin = async (req: Request, res: Response, next: NextFunction)
         const { email, password } = req.body
         const { token, findUserByEmail, refreshToken } = await userLoginService({ email, password })
 
+        res.cookie('_refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: false,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            sameSite: 'lax',
+            path: '/',
+        })
+
         res.status(200).json({
             error: false,
             data: {
                 token,
-                refreshToken,
+                // refreshToken,
                 role: findUserByEmail.role,
                 fullName: `${findUserByEmail.firstName} ${findUserByEmail.lastName}`
             },
             message: 'Berhasil melakukan login'
-        })
-    } catch (error) {
-        next(error)
-    }
-}
-
-export const userRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { tokenRefresh } = req.params
-        if (!tokenRefresh) throw { msg: 'Refresh token tidak ditemukan', status: 400 }
-
-        const dataUser = tokenVerify(tokenRefresh) as ITokenVerify
-        if (!dataUser) throw { msg: 'Refresh token tidak valid', status: 400 }
-
-        const newAccessToken = tokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN", expires: '12h' })
-        const newRefreshToken = refrestTokenSign({ id: dataUser?.id, role: dataUser?.role as "USER" | "ADMIN" })
-
-        res.status(200).json({
-            error: false,
-            message: 'Berhasil merefresh token anda',
-            data: { accessToken: newAccessToken, refreshToken: newRefreshToken }
         })
     } catch (error) {
         next(error)

@@ -106,12 +106,11 @@ export const getCategoryForFilterProductPublic = async (req: Request, res: Respo
 export const getProductByIdPublic = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { idProduct } = req.params
-        if (!idProduct) throw { msg: 'Ada kesalahan dari sisi server', status: 500 }
+        if (!idProduct) throw { msg: 'ID tidak ditemukan', status: 404 }
 
         const findProductById = await prisma.product.findFirst({
-            where: {
-                id: Number(idProduct)
-            }
+            where: { id: Number(idProduct) },
+            include: { category: true }
         })
 
         if (!findProductById) throw { msg: 'Data produk tidak tersedia', status: 404 }
