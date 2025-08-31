@@ -11,6 +11,7 @@ export interface IUserRegisterService {
     firstName: string
     lastName: string
     phoneNumber: string
+    password: string
 }
 
 export interface IUserLoginService {
