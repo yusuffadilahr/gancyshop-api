@@ -14,12 +14,14 @@ import { Server as SocketIO } from "socket.io";
 import { tokenVerify } from "./utils/tokenJwt";
 import { logger } from "./utils/logger";
 import { testConnection } from "./connection/c";
+import cookieParser from 'cookie-parser'
 
 dotenv.config()
 const port = process.env.PORT
 
 const app: Express = express()
 app.use(express.json())
+app.use(cookieParser())
 
 const server = http.createServer(app)
 const io = new SocketIO(server, {
