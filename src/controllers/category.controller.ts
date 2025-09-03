@@ -50,28 +50,29 @@ export const getCategoryProduct = async (req: Request, res: Response, next: Next
             deletedAt: null
         }
 
-        if (!!search) {
+        if (search) {
             whereClause = {
                 ...whereClause,
-                categoryName: { contains: search as string },
-                categorymotorcyle: {
-                    motorCycleName: { contains: search as string }
-                }
+                OR: [
+                    { categoryName: { contains: search as string } },
+                    { categorymotorcyle: { motorCycleName: { contains: search as string } } }
+                ]
             }
         }
 
         const findAllCategory = await prisma.category.findMany({
-            include: {
-                categorymotorcyle: true
-            },
+            include: { categorymotorcyle: true },
             where: whereClause, take, skip,
             orderBy: { createdAt: 'desc' }
         })
 
         if (findAllCategory.length === 0) throw { msg: 'Data kategori kosong', status: 404 }
+        const totalCount = await prisma.category.count({ where: whereClause })
+        const totalPage = Math.ceil(totalCount / Number(limit))
+
         res.status(200).json({
             error: false,
-            data: findAllCategory,
+            data: { data: findAllCategory, totalPage },
             message: 'Berhasil mendapatkan data kategori'
         })
     } catch (error) {
