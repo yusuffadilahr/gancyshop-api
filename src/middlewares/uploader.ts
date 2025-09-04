@@ -10,7 +10,6 @@ export const uploader = (req: Request, res: Response, next: NextFunction) => {
 
     uploaded(req, res, function (err) {
         try {
-            logger.error(`ERROR MULTER: ${err} <--`)
             if (err) throw { msg: 'Ada kesalahan saat mengupload file', status: 400 }
 
             if (userId && userRole) {

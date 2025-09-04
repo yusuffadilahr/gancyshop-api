@@ -1,15 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import prisma from "../connection/db";
 import { Prisma } from "@prisma/client";
-import { addDays } from "date-fns";
+import { addDays, addHours, endOfDay, format, startOfDay } from "date-fns";
 
 export const getAllProductPublic = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const {
-            limit = '5', page = '1', search,
-            category, minPrice, maxPrice,
-            minWeight, maxWeight, statusProduct,
-            stock, tanggalDibuat
+            limit = '5', page = '1', search = '',
+            category = '', minPrice = '', maxPrice = '',
+            minWeight = '', maxWeight = '', stock = '', tanggalDibuat = ''
         } = req.query
 
         const take = parseInt(limit as string)
@@ -30,16 +29,24 @@ export const getAllProductPublic = async (req: Request, res: Response, next: Nex
 
         if (search || category || tanggalDibuat || minPrice || maxPrice ||
             minWeight || maxWeight || stock) {
+            const [day, month, year] = (tanggalDibuat as string).split('/').map(Number)
+            const formatDateConvert = new Date(year, month - 1, day)
+
             whereClause = {
                 ...whereClause,
                 AND: [
-                    ...(search ? [{ name: { contains: search as string } }] : []),
-                    ...(category ? [{ categoryId: Number(category) }] : []),
+                    ...(search ? [{
+                        name: { contains: search as string }
+                    }] : []),
+
+                    ...(category ? [{
+                        categoryId: Number(category)
+                    }] : []),
 
                     ...(tanggalDibuat ? [{
                         createdAt: {
-                            gte: new Date(tanggalDibuat as string),
-                            lte: addDays(new Date(tanggalDibuat as string), 1)
+                            gte: new Date(formatDateConvert),
+                            lte: addDays(endOfDay(formatDateConvert), 1)
                         }
                     }] : []),
 
@@ -57,20 +64,21 @@ export const getAllProductPublic = async (req: Request, res: Response, next: Nex
                         }
                     }] : []),
 
-                    ...(stock ? [{ stock: stockValidation }] : [])
+                    ...(stock ? [{
+                        stock: stockValidation
+                    }] : [])
                 ]
             }
         }
 
         const findAllProduct = await prisma.product.findMany({
-            where: whereClause, take, skip, orderBy: { createdAt: 'desc' },
+            where: whereClause, take, skip, orderBy: { createdAt: tanggalDibuat ? 'asc' : 'desc' },
             include: {
                 category: true
             }
         })
 
         const totalCount = await prisma.product.count({ where: whereClause })
-
         const totalPage = Math.ceil(totalCount / Number(limit))
 
         if (findAllProduct.length === 0) throw { msg: 'Data tidak tersedia/kosong', status: 404 }
