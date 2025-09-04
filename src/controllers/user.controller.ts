@@ -5,6 +5,7 @@ import prisma from "../connection/db"
 import { refrestTokenSign, tokenSign, tokenVerify } from "../utils/tokenJwt"
 import { ITokenVerify } from "../types"
 import { addDays } from "date-fns"
+import { Prisma } from "@prisma/client"
 
 export const userRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {

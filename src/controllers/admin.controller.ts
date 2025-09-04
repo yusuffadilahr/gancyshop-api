@@ -5,262 +5,397 @@ import { readFileSync, rmSync } from "fs";
 import { Prisma } from "@prisma/client";
 import type { FolderObject } from "imagekit/dist/libs/interfaces";
 
-export const createProduct = async (req: Request, res: Response, next: NextFunction) => {
-    const imagesUploaded = (req.files as { [fieldname: string]: Express.Multer.File[] } || {})
+export const createProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const imagesUploaded =
+    (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
 
-    try {
-        const userId = req.user?.id
-        const { name,
-            description,
-            price,
-            isActive,
-            stock,
-            weightGram,
-            categoryId,
-        } = req.body
+  try {
+    const userId = req.user?.id;
+    const {
+      name,
+      description,
+      price,
+      isActive,
+      stock,
+      weightGram,
+      categoryId,
+    } = req.body;
 
-        if (!name || !description || !price || !stock || !weightGram || !categoryId) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
-        if (!imagesUploaded.images || imagesUploaded.images.length === 0) throw { msg: 'File tidak ditemukan', status: 404 }
+    if (!name || !description || !price || !stock || !weightGram || !categoryId)
+      throw { msg: "Harap diisi terlebih dahulu", status: 400 };
+    if (!imagesUploaded.images || imagesUploaded.images.length === 0)
+      throw { msg: "File tidak ditemukan", status: 404 };
 
-        const fileBuffer = readFileSync(imagesUploaded.images[0].path)
-        if (!!fileBuffer) {
-            const fileUploadImageKit = await imageKit.upload({
-                file: fileBuffer,
-                fileName: imagesUploaded.images[0].filename,
-                folder: "/products/body-sparepart"
-            })
+    const fileBuffer = readFileSync(imagesUploaded.images[0].path);
+    if (!!fileBuffer) {
+      const fileUploadImageKit = await imageKit.upload({
+        file: fileBuffer,
+        fileName: imagesUploaded.images[0].filename,
+        folder: "/products/body-sparepart",
+      });
 
-            if (!fileUploadImageKit) throw { msg: 'Gagal upload data', status: 400 }
-            const uploadedProduct = await prisma.product.create({
-                data: {
-                    name,
-                    description,
-                    price: parseFloat(price),
-                    imageUrl: fileUploadImageKit.url,
-                    isActive: isActive === 'false' ? false : true,
-                    stock: Number(stock),
-                    weightGram: Number(weightGram),
-                    ownerId: Number(userId),
-                    categoryId: Number(categoryId)
-                }
-            })
+      if (!fileUploadImageKit) throw { msg: "Gagal upload data", status: 400 };
+      const uploadedProduct = await prisma.product.create({
+        data: {
+          name,
+          description,
+          price: parseFloat(price),
+          imageUrl: fileUploadImageKit.url,
+          isActive: isActive === "false" ? false : true,
+          stock: Number(stock),
+          weightGram: Number(weightGram),
+          ownerId: Number(userId),
+          categoryId: Number(categoryId),
+        },
+      });
 
-            if (!uploadedProduct) throw { msg: 'Gagal membuat produk', status: 400 }
-            rmSync(imagesUploaded.images[0].path)
-        }
-
-        res.status(200).json({
-            data: {},
-            error: false,
-            message: 'Berhasil mengupload produk!'
-        })
-
-    } catch (error) {
-        rmSync(imagesUploaded.images[0].path)
-        next(error)
+      if (!uploadedProduct) throw { msg: "Gagal membuat produk", status: 400 };
+      rmSync(imagesUploaded.images[0].path);
     }
-}
 
-export const getAllDataProductAdmin = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { search = '', limit = '5', page = '1' } = req.query
+    res.status(200).json({
+      data: {},
+      error: false,
+      message: "Berhasil mengupload produk!",
+    });
+  } catch (error) {
+    rmSync(imagesUploaded.images[0].path);
+    next(error);
+  }
+};
 
-        const take = parseInt(limit as string)
-        const skip = (parseInt(page as string) - 1) * take
+export const getAllDataProductAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { search = "", limit = "5", page = "1" } = req.query;
 
-        let whereClause: Prisma.productWhereInput = {
-            deletedAt: null
-        }
+    const take = parseInt(limit as string);
+    const skip = (parseInt(page as string) - 1) * take;
 
-        if (search) {
-            whereClause = {
-                OR: [
-                    { name: { contains: search as string } },
-                ]
-            }
-        }
+    let whereClause: Prisma.productWhereInput = {
+      deletedAt: null,
+    };
 
-        const findAllProduct = await prisma.product.findMany({
-            where: whereClause, take, skip,
-            orderBy: { createdAt: 'desc' }
-        })
-
-        const totalCount = await prisma.product.count({
-            where: whereClause
-        })
-
-        const totalPage = Math.ceil(totalCount / Number(limit))
-
-        res.status(200).json({
-            error: false,
-            data: { data: findAllProduct, totalPage },
-            message: 'Berhasil mendapatkan data'
-        })
-    } catch (error) {
-        next(error)
+    if (search) {
+      whereClause = {
+        OR: [{ name: { contains: search as string } }],
+      };
     }
-}
 
-export const updateProductActive = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { isActive } = req.body
-        const { idProduct } = req.params
+    const findAllProduct = await prisma.product.findMany({
+      where: whereClause,
+      take,
+      skip,
+      orderBy: { createdAt: "desc" },
+    });
 
-        const findProduct = await prisma.product.findFirst({
-            where: { id: Number(idProduct) }
-        })
+    const totalCount = await prisma.product.count({
+      where: whereClause,
+    });
 
-        if (!findProduct || findProduct.deletedAt !== null) throw { msg: 'Produk sudah tidak tersedia', status: 404 }
+    const totalPage = Math.ceil(totalCount / Number(limit));
 
-        await prisma.product.update({
-            where: {
-                id: Number(idProduct)
-            }, data: {
-                isActive: isActive === 'false' ? false : true
-            }
-        })
+    res.status(200).json({
+      error: false,
+      data: { data: findAllProduct, totalPage },
+      message: "Berhasil mendapatkan data",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-        res.status(200).json({
-            error: false,
-            data: {},
-            message: isActive === 'true' ?
-                'Produkmu sekarang aktif'
-                : 'Produkmu sudah di non-aktif'
-        })
+export const updateProductActive = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { isActive } = req.body;
+    const { idProduct } = req.params;
 
-    } catch (error) {
-        next(error)
+    const findProduct = await prisma.product.findFirst({
+      where: { id: Number(idProduct) },
+    });
+
+    if (!findProduct || findProduct.deletedAt !== null)
+      throw { msg: "Produk sudah tidak tersedia", status: 404 };
+
+    await prisma.product.update({
+      where: {
+        id: Number(idProduct),
+      },
+      data: {
+        isActive: isActive === "false" ? false : true,
+      },
+    });
+
+    res.status(200).json({
+      error: false,
+      data: {},
+      message:
+        isActive === "true"
+          ? "Produkmu sekarang aktif"
+          : "Produkmu sudah di non-aktif",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateProductInformation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const imagesUploaded =
+    (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
+
+  try {
+    const { name, description, price, stock, weightGram, isActive } = req.body;
+
+    const { idProduct } = req.params;
+
+    const findProduct = await prisma.product.findFirst({
+      where: {
+        AND: [{ id: Number(idProduct) }, { deletedAt: null }],
+      },
+    });
+
+    if (!findProduct || findProduct.deletedAt !== null)
+      throw { msg: "Produk sudah tidak tersedia", status: 404 };
+    if (!name || !description || !price || !stock || !weightGram)
+      throw { msg: "Harap diisi terlebih dahulu", status: 400 };
+    if (!imagesUploaded.images || imagesUploaded.images.length === 0) {
+      await prisma.product.update({
+        where: { id: Number(idProduct) },
+        data: {
+          name,
+          description,
+          price: parseFloat(price),
+          isActive: isActive === "false" ? false : true,
+          stock: Number(stock),
+          weightGram: Number(weightGram),
+          imageUrl: findProduct.imageUrl,
+        },
+      });
+
+      res.status(200).json({
+        error: false,
+        data: {},
+        message: "Berhasil mengupdate data",
+      });
+
+      return;
     }
-}
 
-export const updateProductInformation = async (req: Request, res: Response, next: NextFunction) => {
-    const imagesUploaded = (req.files as { [fieldname: string]: Express.Multer.File[] } || {})
+    const fileNameOnDb = findProduct.imageUrl?.split("/").pop();
+    const findFileName = await imageKit.listFiles({
+      searchQuery: `name = "${fileNameOnDb}"`,
+      limit: 1,
+    });
 
-    try {
-        const { name,
-            description,
-            price,
-            stock,
-            weightGram,
-            isActive } = req.body
+    if (findFileName.length === 0)
+      throw { msg: "Nama File tidak tersedia", status: 404 };
 
-        const { idProduct } = req.params
+    const file = findFileName[0] as FolderObject;
+    const fileBuffer = readFileSync(imagesUploaded.images[0].path);
+    if (!fileBuffer)
+      throw { msg: "Ada kesalahan saat membaca file", status: 404 };
 
-        const findProduct = await prisma.product.findFirst({
-            where: {
-                AND: [
-                    { id: Number(idProduct) },
-                    { deletedAt: null }
-                ]
-            }
-        })
+    const fileUploadImageKit = await imageKit.upload({
+      file: fileBuffer,
+      fileName: imagesUploaded.images[0].filename,
+      folder: "/products/body-sparepart",
+    });
 
-        if (!findProduct || findProduct.deletedAt !== null) throw { msg: 'Produk sudah tidak tersedia', status: 404 }
-        if (!name || !description || !price || !stock || !weightGram) throw { msg: 'Harap diisi terlebih dahulu', status: 400 }
-        if (!imagesUploaded.images || imagesUploaded.images.length === 0) {
-            await prisma.product.update({
-                where: { id: Number(idProduct) },
-                data: {
-                    name,
-                    description,
-                    price: parseFloat(price),
-                    isActive: isActive === 'false' ? false : true,
-                    stock: Number(stock),
-                    weightGram: Number(weightGram),
-                    imageUrl: findProduct.imageUrl
-                }
-            })
+    if (!fileUploadImageKit) throw { msg: "Gagal upload gambar", status: 400 };
 
-            res.status(200).json({
-                error: false,
-                data: {},
-                message: 'Berhasil mengupdate data'
-            })
+    const uploadedProduct = await prisma.product.update({
+      where: { id: Number(idProduct) },
+      data: {
+        name,
+        description,
+        price: parseFloat(price),
+        isActive: isActive === "false" ? false : true,
+        stock: Number(stock),
+        weightGram: Number(weightGram),
+        imageUrl: fileUploadImageKit.url,
+      },
+    });
 
-            return;
-        }
+    if (!uploadedProduct)
+      throw { msg: "Ada kesalahan saat mengupdate data", status: 400 };
+    rmSync(imagesUploaded.images[0].path);
+    if ("fileId" in file) await imageKit.deleteFile(file.fileId as string);
 
-        const fileNameOnDb = findProduct.imageUrl?.split('/').pop()
-        const findFileName = await imageKit.listFiles({
-            searchQuery: `name = "${fileNameOnDb}"`,
-            limit: 1
-        })
+    res.status(200).json({
+      error: false,
+      data: {},
+      message: "Berhasil mengupdate data",
+    });
+  } catch (error) {
+    rmSync(imagesUploaded.images[0].path);
+    next(error);
+  }
+};
 
-        if (findFileName.length === 0) throw { msg: 'Nama File tidak tersedia', status: 404 }
+export const deleteProductInformation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { idProduct } = req.params;
+    const findProduct = await prisma.product.findFirst({
+      where: {
+        AND: [{ id: Number(idProduct) }, { deletedAt: null }],
+      },
+    });
 
-        const file = findFileName[0] as FolderObject
-        const fileBuffer = readFileSync(imagesUploaded.images[0].path)
-        if (!fileBuffer) throw { msg: 'Ada kesalahan saat membaca file', status: 404 }
+    if (!findProduct) throw { msg: "Produk sudah tidak tersedia", status: 404 };
 
-        const fileUploadImageKit = await imageKit.upload({
-            file: fileBuffer,
-            fileName: imagesUploaded.images[0].filename,
-            folder: "/products/body-sparepart"
-        })
+    const updatedProduct = await prisma.product.update({
+      where: {
+        id: Number(idProduct),
+      },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+      },
+    });
 
-        if (!fileUploadImageKit) throw { msg: 'Gagal upload gambar', status: 400 }
+    if (!updatedProduct) throw { msg: "Gagal menghapus produk", status: 400 };
 
-        const uploadedProduct = await prisma.product.update({
-            where: { id: Number(idProduct) },
-            data: {
-                name,
-                description,
-                price: parseFloat(price),
-                isActive: isActive === 'false' ? false : true,
-                stock: Number(stock),
-                weightGram: Number(weightGram),
-                imageUrl: fileUploadImageKit.url
-            }
-        })
+    res.status(200).json({
+      error: false,
+      data: {},
+      message: "Berhasil menghapus data",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-        if (!uploadedProduct) throw { msg: 'Ada kesalahan saat mengupdate data', status: 400 }
-        rmSync(imagesUploaded.images[0].path)
-        if ("fileId" in file) await imageKit.deleteFile(file.fileId as string)
+export const getAllUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { page = "1", limit = "5", search = "" } = req.query;
+    const take = parseInt(limit as string);
+    const skip = (parseInt(page as string) - 1) * take;
 
-        res.status(200).json({
-            error: false,
-            data: {},
-            message: 'Berhasil mengupdate data'
-        })
+    let whereClauses: Prisma.userWhereInput = {};
 
-    } catch (error) {
-        rmSync(imagesUploaded.images[0].path)
-        next(error)
+    if (search) {
+      whereClauses = {
+        OR: [
+          { firstName: { contains: search as string } },
+          { lastName: { contains: search as string } },
+        ],
+      };
     }
-}
 
-export const deleteProductInformation = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { idProduct } = req.params
-        const findProduct = await prisma.product.findFirst({
-            where: {
-                AND: [
-                    { id: Number(idProduct) },
-                    { deletedAt: null }
-                ]
-            }
-        })
+    const findAllUser = await prisma.user.findMany({
+      where: whereClauses,
+      orderBy: { createdAt: "asc" },
+      take,
+      skip,
+    });
 
-        if (!findProduct) throw { msg: 'Produk sudah tidak tersedia', status: 404 }
+    const dataUser = findAllUser?.map((item) => {
+      return {
+        address: item?.address,
+        createdAt: item?.createdAt,
+        email: item?.email,
+        firstName: item?.firstName,
+        id: item?.id,
+        lastName: item?.lastName,
+        phoneNumber: item?.phoneNumber,
+        role: item?.role,
+      };
+    });
 
-        const updatedProduct = await prisma.product.update({
-            where: {
-                id: Number(idProduct)
-            },
-            data: {
-                isActive: false,
-                deletedAt: new Date()
-            }
-        })
+    const totalCount = await prisma.user.count({ where: whereClauses });
+    const totalPage = Math.ceil(totalCount / parseInt(limit.toString()));
 
-        if (!updatedProduct) throw { msg: 'Gagal menghapus produk', status: 400 }
+    res.status(200).json({
+      error: false,
+      message: "Berhasil mendapatkan data user",
+      data: { data: dataUser, totalPage },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-        res.status(200).json({
-            error: false,
-            data: {},
-            message: 'Berhasil menghapus data'
-        })
-    } catch (error) {
-        next(error)
-    }
-}
+export const deleteUserById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { idUser } = req.params;
+    await prisma.$transaction(async (tx) => {
+      const findUserById = await tx.user.findFirst({
+        where: { id: parseInt(idUser.toString()) },
+      });
+
+      if (!findUserById)
+        throw { msg: "User sudah terhapus/tidak tersedia", status: 400 };
+
+      const findUserInTableCart = await tx.cart.findFirst({
+        where: { userId: Number(idUser) },
+      });
+
+      if (findUserInTableCart) {
+        await tx.cart.delete({
+          where: { userId: parseInt(idUser.toString()) },
+        });
+      }
+
+      const findManyChatSession = await tx.chatsession.findMany({
+        where: { userId: Number(idUser) },
+      });
+
+      if (findManyChatSession.length > 0) {
+        await tx.chatsession.deleteMany({
+          where: { userId: parseInt(idUser.toString()) },
+        });
+      }
+
+      const findMessageCust = await tx.messagecustomer.findMany({
+        where: { userId: Number(idUser) },
+      });
+
+      if (findMessageCust.length > 0) {
+        await tx.messagecustomer.deleteMany({
+          where: { userId: parseInt(idUser.toString()) },
+        });
+      }
+
+      const deleted = await tx.user.delete({
+        where: { id: parseInt(idUser.toString()) },
+      });
+
+      if (!deleted) throw { msg: "Data user gagal dihapus", status: 400 };
+    });
+
+    res.status(200).json({
+      error: false,
+      data: {},
+      message: "Data user berhasil di hapus",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
