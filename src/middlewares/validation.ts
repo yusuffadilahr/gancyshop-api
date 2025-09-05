@@ -132,3 +132,29 @@ export const adminCreateUserValidator = [
     .withMessage("Nomor telepon maksimal 16 digit")
     .escape(),
 ];
+
+export const addToCartValidation = [
+  body("productId")
+    .trim()
+    .notEmpty()
+    .withMessage("ID Produk diperlukan")
+    .escape(),
+
+  body("price")
+    .trim()
+    .notEmpty()
+    .withMessage("Masukkan harga terlebih dahulu")
+    .isString()
+    .isLength({ min: 2 })
+    .withMessage("Harga tidak valid!")
+    .escape(),
+
+  body("quantity")
+    .trim()
+    .notEmpty()
+    .withMessage("Masukkan harga terlebih dahulu")
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage("Quantity tidak valid!")
+    .escape(),
+];

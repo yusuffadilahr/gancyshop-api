@@ -367,7 +367,7 @@ export const deleteUserById = async (
       });
 
       if (findUserInTableCart) {
-        await tx.cart.delete({
+        await tx.cart.deleteMany({
           where: { userId: parseInt(idUser.toString()) },
         });
       }
@@ -447,7 +447,6 @@ export const addNewUser = async (
       data: {},
       message: "Berhasil membuat user baru",
     });
-
   } catch (error) {
     next(error);
   }
