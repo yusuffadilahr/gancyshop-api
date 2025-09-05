@@ -8,39 +8,32 @@ datasource db {
 }
 
 model cart {
-  id        Int        @id @default(autoincrement())
-  userId    Int        @unique(map: "Cart_userId_key")
-  createdAt DateTime   @default(now())
+  id         Int  @id @default(autoincrement())
+  userId     Int
+  productId  Int?
+  quantity   Int
+  price      Int
+  totalPrice Int
+  user       user @relation(fields: [userId], references: [id], map: "Cart_userId_fkey")
+
+  createdAt DateTime  @default(now())
   updatedAt DateTime?
   deletedAt DateTime?
-  user      user       @relation(fields: [userId], references: [id], map: "Cart_userId_fkey")
-  cartitem  cartitem[]
+  product   product?  @relation(fields: [productId], references: [id])
 
   @@map("cart")
-}
-
-model cartitem {
-  id        Int     @id @default(autoincrement())
-  cartId    Int
-  productId Int
-  quantity  Int
-  cart      cart    @relation(fields: [cartId], references: [id], map: "CartItem_cartId_fkey")
-  product   product @relation(fields: [productId], references: [id], map: "CartItem_productId_fkey")
-
-  @@index([cartId], map: "CartItem_cartId_fkey")
-  @@index([productId], map: "CartItem_productId_fkey")
-  @@map("cartitem")
 }
 
 model category {
   id                   Int                @id @default(autoincrement())
   categoryName         String
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime?
-  deletedAt            DateTime?
   categoryMotorcycleId Int?
   categorymotorcyle    categorymotorcyle? @relation(fields: [categoryMotorcycleId], references: [id], map: "Category_categoryMotorcycleId_fkey")
   product              product[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?
+  deletedAt DateTime?
 
   @@index([categoryMotorcycleId], map: "Category_categoryMotorcycleId_fkey")
   @@map("category")
@@ -49,11 +42,12 @@ model category {
 model categorymotorcyle {
   id             Int        @id @default(autoincrement())
   motorCycleName String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime?
-  deletedAt      DateTime?
   releaseYear    Int?
   category       category[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?
+  deletedAt DateTime?
 
   @@map("categorymotorcycle")
 }
@@ -89,23 +83,22 @@ model messagecustomer {
 }
 
 model product {
-  id          Int        @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
   description String?
   price       Float
-  stock       Int        @default(0)
+  stock       Int       @default(0)
   imageUrl    String?
-  weightGram  Int        @default(0)
+  weightGram  Int       @default(0)
   isActive    Boolean?
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime  @default(now())
   updatedAt   DateTime?
   deletedAt   DateTime?
   ownerId     Int
   fileId      String?
   categoryId  Int
-  cartitem    cartitem[]
-  category    category   @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
-  user        user       @relation(fields: [ownerId], references: [id], map: "Product_ownerId_fkey")
+  category    category  @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
+  cart        cart[]
 
   @@index([categoryId], map: "Product_categoryId_fkey")
   @@index([ownerId], map: "Product_ownerId_fkey")
@@ -113,23 +106,23 @@ model product {
 }
 
 model user {
-  id                  Int               @id @default(autoincrement())
-  email               String            @unique(map: "User_email_key")
+  id                  Int       @id @default(autoincrement())
+  email               String    @unique(map: "User_email_key")
   password            String
   firstName           String
   lastName            String
   phoneNumber         String?
-  role                user_role         @default(USER)
-  createdAt           DateTime          @default(now())
+  role                user_role @default(USER)
+  createdAt           DateTime  @default(now())
   updatedAt           DateTime?
   deletedAt           DateTime?
-  address             String?           @db.Text
+  address             String?   @db.Text
   isUpdatePassword    Boolean?
-  tokenUpdatePassword String?           @db.Text
-  cart                cart?
-  chatsession         chatsession[]
-  messagecustomer     messagecustomer[]
-  product             product[]
+  tokenUpdatePassword String?   @db.Text
+
+  cart            cart[]
+  chatsession     chatsession[]
+  messagecustomer messagecustomer[]
 
   @@map("user")
 }
