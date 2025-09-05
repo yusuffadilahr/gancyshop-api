@@ -4,6 +4,7 @@ import { imageKit } from "../utils/imageKit";
 import { readFileSync, rmSync } from "fs";
 import { Prisma } from "@prisma/client";
 import type { FolderObject } from "imagekit/dist/libs/interfaces";
+import { hashPassword } from "../utils/hashPassword";
 
 export const createProduct = async (
   req: Request,
@@ -345,6 +346,8 @@ export const deleteUserById = async (
 ) => {
   try {
     const { idUser } = req.params;
+    const dataUser = req.user;
+
     await prisma.$transaction(async (tx) => {
       const findUserById = await tx.user.findFirst({
         where: { id: parseInt(idUser.toString()) },
@@ -352,6 +355,12 @@ export const deleteUserById = async (
 
       if (!findUserById)
         throw { msg: "User sudah terhapus/tidak tersedia", status: 400 };
+
+      if (findUserById?.role === "ADMIN")
+        throw {
+          msg: "Admin tidak dapat dihapus!",
+          status: 400,
+        };
 
       const findUserInTableCart = await tx.cart.findFirst({
         where: { userId: Number(idUser) },
@@ -395,6 +404,50 @@ export const deleteUserById = async (
       data: {},
       message: "Data user berhasil di hapus",
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addNewUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { firstName, lastName, email, role, phoneNumber } = req.body;
+
+    const findUserByEmail = await prisma.user.findFirst({
+      where: { email },
+    });
+
+    if (findUserByEmail)
+      throw {
+        msg: "Pengguna sudah tersedia, gunakan email lain.",
+        status: 400,
+      };
+
+    const hash = await hashPassword("12312312");
+    const created = await prisma.user.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+        password: hash,
+        phoneNumber,
+        role,
+      },
+    });
+
+    if (!created)
+      throw { msg: "Ada kesalahan saat membuat user.", status: 500 };
+
+    res.status(200).json({
+      error: false,
+      data: {},
+      message: "Berhasil membuat user baru",
+    });
+
   } catch (error) {
     next(error);
   }

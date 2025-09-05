@@ -3,6 +3,7 @@ import { verifyToken } from "../middlewares/verifyToken";
 import { checkRoleUser } from "../middlewares/checkUser";
 import { uploader } from "../middlewares/uploader";
 import {
+  addNewUser,
   createProduct,
   deleteProductInformation,
   deleteUserById,
@@ -11,6 +12,8 @@ import {
   updateProductActive,
   updateProductInformation,
 } from "../controllers/admin.controller";
+import { adminCreateUserValidator } from "../middlewares/validation";
+import { expressValidatorErrorHandling } from "../middlewares/errorValidation";
 
 export const adminRoute = Router();
 
@@ -55,4 +58,13 @@ adminRoute.delete(
   verifyToken,
   checkRoleUser,
   deleteUserById
+);
+
+adminRoute.post(
+  "/create-user",
+  verifyToken,
+  checkRoleUser,
+  adminCreateUserValidator,
+  expressValidatorErrorHandling,
+  addNewUser
 );
