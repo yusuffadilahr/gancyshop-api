@@ -10,6 +10,12 @@ export const addToCart = async (
     const dataUser = req.user;
     const { productId, quantity, price } = req.body;
 
+    const findProduct = await prisma.product.findFirst({
+      where: { id: Number(productId) },
+    });
+
+    if (!findProduct) throw { msg: "Produk tidak ada", status: 400 };
+
     const findUser = await prisma.user.findFirst({
       where: { id: Number(dataUser?.id) },
     });
@@ -27,6 +33,12 @@ export const addToCart = async (
 
     if (findProductSame) {
       const currentQuantity = findProductSame?.quantity + Number(quantity);
+      if (currentQuantity > findProduct?.stock)
+        throw {
+          msg: "Anda sudah mencapai batas stock",
+          status: 400,
+        };
+
       const updated = await prisma.cart.update({
         where: { id: findProductSame?.id },
         data: {
@@ -66,6 +78,42 @@ export const addToCart = async (
       error: false,
       data: {},
       message: "Berhasil menambahkan ke keranjang anda",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getShoppingCartUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const dataUser = req.user;
+    const findDataCart = await prisma.cart.findMany({
+      where: { userId: Number(dataUser?.id) },
+      include: {
+        product: {
+          include: { category: true },
+        },
+      },
+    });
+
+    if (findDataCart?.length === 0) {
+      res.status(200).json({
+        error: false,
+        message: "Berhasil mendapatkan data",
+        data: [],
+      });
+
+      return;
+    }
+
+    res.status(200).json({
+      error: false,
+      message: "Berhasil mendapatkan data",
+      data: findDataCart,
     });
   } catch (error) {
     next(error);
