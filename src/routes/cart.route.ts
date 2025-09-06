@@ -1,6 +1,11 @@
 import { Router } from "express";
 import { verifyToken } from "../middlewares/verifyToken";
-import { addToCart, getShoppingCartUser } from "../controllers/cart.controller";
+import {
+  addToCart,
+  getShoppingCartUser,
+  removeCartProduct,
+  summarizeQuantityCart,
+} from "../controllers/cart.controller";
 import { addToCartValidation } from "../middlewares/validation";
 import { expressValidatorErrorHandling } from "../middlewares/errorValidation";
 import { checkRoleOnlyUser } from "../middlewares/checkUser";
@@ -19,4 +24,18 @@ cartRoute.get(
   verifyToken,
   checkRoleOnlyUser,
   getShoppingCartUser
+);
+
+cartRoute.delete(
+  "/cart-user/:cartId",
+  verifyToken,
+  checkRoleOnlyUser,
+  removeCartProduct
+);
+
+cartRoute.patch(
+  "/cart-user",
+  verifyToken,
+  checkRoleOnlyUser,
+  summarizeQuantityCart
 );

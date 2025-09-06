@@ -119,3 +119,99 @@ export const getShoppingCartUser = async (
     next(error);
   }
 };
+
+export const removeCartProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { cartId } = req.params;
+    const findDataCart = await prisma.cart.findFirst({
+      where: { id: Number(cartId) },
+    });
+
+    if (!findDataCart)
+      throw { msg: "Data sudah terhapus/data tidak tersedia", status: 400 };
+
+    const deleted = await prisma.cart.delete({ where: { id: Number(cartId) } });
+    if (!deleted) throw { msg: "Gagal saat menghapus cart", status: 400 };
+
+    res
+      .status(200)
+      .json({ error: false, message: "Data berhasil dihapus", data: {} });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const summarizeQuantityCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { summarize, cartId } = req.body;
+
+    const findCart = await prisma.cart.findFirst({
+      where: { id: Number(cartId) },
+    });
+
+    if (!findCart) throw { msg: "Data cart sudah tidak tersedia", status: 400 };
+    const findProduct = await prisma.product.findFirst({
+      where: { id: Number(findCart?.productId) },
+    });
+
+    if (!findProduct)
+      throw { msg: "Tidak ditemukan product pada cart ini", status: 400 };
+
+    const stockProduct = findProduct?.stock;
+    if (summarize === "plus") {
+      const currentQuantity = findCart?.quantity + 1;
+      const currentTotalPrice = findCart?.price * currentQuantity;
+
+      if (currentQuantity > stockProduct)
+        throw { msg: "Stock produk sudah mencapai batas", status: 400 };
+
+      const updated = await prisma.cart.update({
+        where: { id: Number(cartId) },
+        data: { quantity: currentQuantity, totalPrice: currentTotalPrice },
+      });
+
+      if (!updated)
+        throw { msg: "Gagal saat menambahkan data quantity", status: 400 };
+
+      res.status(200).json({
+        error: false,
+        data: {},
+        message: "Berhasil menambahkan data quantity",
+      });
+
+      return;
+    } else if (summarize === "minus") {
+      const currentQuantity = findCart?.quantity - 1;
+      const currentTotalPrice = findCart?.price * currentQuantity;
+
+      if (currentQuantity < 1)
+        throw { msg: "Stock produk tidak boleh kurang dari 0", status: 400 };
+
+      const updated = await prisma.cart.update({
+        where: { id: Number(cartId) },
+        data: { quantity: currentQuantity, totalPrice: currentTotalPrice },
+      });
+
+      if (!updated)
+        throw { msg: "Gagal saat mengurangi data quantity", status: 400 };
+
+      res.status(200).json({
+        error: false,
+        data: {},
+        message: "Berhasil mengurangi data quantity",
+      });
+
+      return;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
