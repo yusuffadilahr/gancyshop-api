@@ -28,6 +28,7 @@ export const createProduct = async (
 
     if (!name || !description || !price || !stock || !weightGram || !categoryId)
       throw { msg: "Harap diisi terlebih dahulu", status: 400 };
+
     if (!imagesUploaded.images || imagesUploaded.images.length === 0)
       throw { msg: "File tidak ditemukan", status: 404 };
 
@@ -55,7 +56,7 @@ export const createProduct = async (
       });
 
       if (!uploadedProduct) throw { msg: "Gagal membuat produk", status: 400 };
-      rmSync(imagesUploaded.images[0].path);
+      rmSync(imagesUploaded?.images?.[0].path);
     }
 
     res.status(200).json({
@@ -86,7 +87,7 @@ export const getAllDataProductAdmin = async (
 
     if (search) {
       whereClause = {
-        OR: [{ name: { contains: search as string } }],
+        AND: [{ name: { contains: search as string } }, { deletedAt: null }],
       };
     }
 
@@ -172,8 +173,10 @@ export const updateProductInformation = async (
 
     if (!findProduct || findProduct.deletedAt !== null)
       throw { msg: "Produk sudah tidak tersedia", status: 404 };
+
     if (!name || !description || !price || !stock || !weightGram)
       throw { msg: "Harap diisi terlebih dahulu", status: 400 };
+
     if (!imagesUploaded.images || imagesUploaded.images.length === 0) {
       await prisma.product.update({
         where: { id: Number(idProduct) },

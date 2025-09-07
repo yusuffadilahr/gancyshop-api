@@ -158,3 +158,14 @@ export const addToCartValidation = [
     .withMessage("Quantity tidak valid!")
     .escape(),
 ];
+
+// formdata
+export const createProductValidation = [
+  body("name").escape(),
+  body("description").escape(),
+  body("price").escape(),
+  body("isActive").escape(),
+  body("stock").escape(),
+  body("weightGram").escape(),
+  body("categoryId").escape(),
+];

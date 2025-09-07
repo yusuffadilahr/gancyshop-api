@@ -16,6 +16,7 @@ cartRoute.post(
   verifyToken,
   addToCartValidation,
   expressValidatorErrorHandling,
+  checkRoleOnlyUser,
   addToCart
 );
 
