@@ -10,6 +10,8 @@ export const uploader = (req: Request, res: Response, next: NextFunction) => {
 
     uploaded(req, res, function (err) {
         try {
+            console.log(err);
+            
             if (err) throw { msg: 'Ada kesalahan saat mengupload file', status: 400 }
 
             if (userId && userRole) {

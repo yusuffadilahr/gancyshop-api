@@ -12,7 +12,10 @@ import {
   updateProductActive,
   updateProductInformation,
 } from "../controllers/admin.controller";
-import { adminCreateUserValidator } from "../middlewares/validation";
+import {
+  adminCreateUserValidator,
+  createProductValidation,
+} from "../middlewares/validation";
 import { expressValidatorErrorHandling } from "../middlewares/errorValidation";
 
 export const adminRoute = Router();
@@ -22,8 +25,11 @@ adminRoute.post(
   verifyToken,
   checkRoleUser,
   uploader,
+  createProductValidation,
+  expressValidatorErrorHandling,
   createProduct
 );
+
 adminRoute.patch(
   "/edit-product/:idProduct",
   verifyToken,
@@ -31,6 +37,7 @@ adminRoute.patch(
   uploader,
   updateProductInformation
 );
+
 adminRoute.patch(
   "/delete-product/:idProduct",
   verifyToken,

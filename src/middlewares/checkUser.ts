@@ -41,7 +41,7 @@ export const checkRoleOnlyUser = (
 
     if (role !== "USER")
       throw {
-        msg: "Anda tidak dapat mengakses, anda bukan admin",
+        msg: "Anda tidak dapat mengakses, anda adalah admin",
         status: 400,
       };
     if (dataUser && dataUser.id) req.user = dataUser;

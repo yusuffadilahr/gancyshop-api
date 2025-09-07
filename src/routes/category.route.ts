@@ -1,12 +1,44 @@
 import { Router } from "express";
-import { createCategory, getCategoryMotorCycle, getCategoryProduct, getCategoryProductById } from "../controllers/category.controller";
+import {
+  createCategory,
+  getCategoryForFilterProductPublic,
+  getCategoryMotorCycle,
+  getCategoryProduct,
+  getCategoryProductById,
+} from "../controllers/category.controller";
 import { verifyToken } from "../middlewares/verifyToken";
 import { checkRoleUser } from "../middlewares/checkUser";
 
-export const categoryRoutes = Router()
+export const categoryRoute = Router();
 
-// private
-categoryRoutes.get('/all-category-motorcycle', verifyToken, checkRoleUser, getCategoryMotorCycle)
-categoryRoutes.get('/all-category/:categoryMotorId', verifyToken, checkRoleUser, getCategoryProductById)
-categoryRoutes.get('/all-categorys', verifyToken, checkRoleUser, getCategoryProduct)
-categoryRoutes.post('/create-category', verifyToken, checkRoleUser, createCategory)
+// private, for admin
+categoryRoute.get(
+  "/all-category-motorcycle",
+  verifyToken,
+  checkRoleUser,
+  getCategoryMotorCycle
+);
+
+categoryRoute.get(
+  "/all-category/:categoryMotorId",
+  verifyToken,
+  checkRoleUser,
+  getCategoryProductById
+);
+
+categoryRoute.get(
+  "/all-categorys",
+  verifyToken,
+  checkRoleUser,
+  getCategoryProduct
+);
+
+categoryRoute.post(
+  "/create-category",
+  verifyToken,
+  checkRoleUser,
+  createCategory
+);
+
+// public
+categoryRoute.get("/all-category-product", getCategoryForFilterProductPublic);
