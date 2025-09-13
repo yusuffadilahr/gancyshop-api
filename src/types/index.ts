@@ -1,26 +1,31 @@
 export interface ITokenVerify {
-    id: number,
-    role: string,
-    type?: string
-    iat: number,
-    exp: number
+  id: number;
+  role: string;
+  type?: string;
+  iat: number;
+  exp: number;
 }
 
 export interface IUserRegisterService {
-    email: string
-    firstName: string
-    lastName: string
-    phoneNumber: string
-    password: string
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  password: string;
 }
 
 export interface IUserLoginService {
-    email: string
-    password: string
+  email: string;
+  password: string;
 }
 
 export interface IUserSetPasswordService {
-    password: string,
-    userId: number,
-    tokenRequest: string
+  password: string;
+  userId: number;
+  tokenRequest: string;
+}
+
+export interface IError extends Error {
+  msg: string;
+  status: number;
 }

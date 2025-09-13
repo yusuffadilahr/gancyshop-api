@@ -169,3 +169,5 @@ export const createProductValidation = [
   body("weightGram").escape(),
   body("categoryId").escape(),
 ];
+
+export const forgotPasswordValidation = [body("email").escape()];

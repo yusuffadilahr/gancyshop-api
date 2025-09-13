@@ -11,7 +11,10 @@ import {
   userSetPasswordService,
 } from "../services/user.service";
 import prisma from "../connection/db";
+import { config } from "dotenv";
 
+config();
+const isProduction = process.env.NODE_ENV === "production";
 export const userRegister = async (
   req: Request,
   res: Response,
@@ -66,10 +69,12 @@ export const userLogin = async (
 
     res.cookie("_refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: isProduction ? true : false, // prod wajib true
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
+      sameSite: isProduction ? "none" : "lax", // agar bisa lintas domain pakai none
       path: "/",
+      domain: isProduction ? ".gancy.my.id" : undefined,
+      //domain tambah domain untuk membuat cookie lintas domain
     });
 
     res.status(200).json({

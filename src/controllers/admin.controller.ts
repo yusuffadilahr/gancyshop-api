@@ -200,7 +200,11 @@ export const updateProductInformation = async (
       return;
     }
 
-    const fileNameOnDb = findProduct.imageUrl?.split("/").pop();
+    const fileNameOnDb = findProduct.imageUrl
+      ?.split("/")
+      .pop()
+      ?.split("?")?.[0];
+
     const findFileName = await imageKit.listFiles({
       searchQuery: `name = "${fileNameOnDb}"`,
       limit: 1,
@@ -237,6 +241,7 @@ export const updateProductInformation = async (
 
     if (!uploadedProduct)
       throw { msg: "Ada kesalahan saat mengupdate data", status: 400 };
+
     rmSync(imagesUploaded.images[0].path);
     if ("fileId" in file) await imageKit.deleteFile(file.fileId as string);
 
