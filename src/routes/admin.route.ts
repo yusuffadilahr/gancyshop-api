@@ -20,6 +20,7 @@ import { expressValidatorErrorHandling } from "../middlewares/errorValidation";
 
 export const adminRoute = Router();
 
+/* ============ POST =========== */
 adminRoute.post(
   "/add-products",
   verifyToken,
@@ -30,6 +31,16 @@ adminRoute.post(
   createProduct
 );
 
+adminRoute.post(
+  "/create-user",
+  verifyToken,
+  checkRoleUser,
+  adminCreateUserValidator,
+  expressValidatorErrorHandling,
+  addNewUser
+);
+
+/* ============ PATCH =========== */
 adminRoute.patch(
   "/edit-product/:idProduct",
   verifyToken,
@@ -45,13 +56,6 @@ adminRoute.patch(
   deleteProductInformation
 );
 
-adminRoute.get(
-  "/all-products",
-  verifyToken,
-  checkRoleUser,
-  getAllDataProductAdmin
-);
-
 adminRoute.patch(
   "/update-is-active/:idProduct",
   verifyToken,
@@ -59,19 +63,20 @@ adminRoute.patch(
   updateProductActive
 );
 
+/* ============ GET =========== */
+adminRoute.get(
+  "/all-products",
+  verifyToken,
+  checkRoleUser,
+  getAllDataProductAdmin
+);
+
 adminRoute.get("/all-users", verifyToken, checkRoleUser, getAllUsers);
+
+/* ============ DELETE =========== */
 adminRoute.delete(
   "/delete-user/:idUser",
   verifyToken,
   checkRoleUser,
   deleteUserById
-);
-
-adminRoute.post(
-  "/create-user",
-  verifyToken,
-  checkRoleUser,
-  adminCreateUserValidator,
-  expressValidatorErrorHandling,
-  addNewUser
 );
