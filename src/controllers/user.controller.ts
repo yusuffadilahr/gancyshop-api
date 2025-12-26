@@ -191,3 +191,39 @@ export const userChatByUserId = async (
     next(error);
   }
 };
+
+export const userSubscription = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const dataUser = req.user;
+    const { email } = req.body;
+
+    const findEmailExist = await prisma.subscription.findFirst({
+      where: { email },
+    });
+    
+    if (findEmailExist)
+      throw { msg: "Email ini sudah pernah dikirim", status: 400 };
+
+    const created = await prisma.subscription.create({
+      data: {
+        email,
+        userId: Number(dataUser?.id),
+      },
+    });
+
+    if (!created) throw { msg: "Gagal dalam mengirim email anda", status: 400 };
+
+    res.status(200).json({
+      error: false,
+      data: {},
+      message:
+        "Berhasil menambahkan email anda, nantikan informasi terkini seputar gancyshop!",
+    });
+  } catch (error) {
+    next(error);
+  }
+};

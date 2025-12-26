@@ -5,18 +5,23 @@ import { uploader } from "../middlewares/uploader";
 import {
   addNewUser,
   createProduct,
+  createReportSales,
   deleteProductInformation,
   deleteUserById,
   getAllDataProductAdmin,
   getAllUsers,
+  getReportSales,
+  updateCategoryInformation,
   updateProductActive,
   updateProductInformation,
 } from "../controllers/admin.controller";
 import {
   adminCreateUserValidator,
   createProductValidation,
+  updateCategoryValidation,
 } from "../middlewares/validation";
 import { expressValidatorErrorHandling } from "../middlewares/errorValidation";
+import { createCategory } from "../controllers/category.controller";
 
 export const adminRoute = Router();
 
@@ -39,6 +44,9 @@ adminRoute.post(
   expressValidatorErrorHandling,
   addNewUser
 );
+
+adminRoute.post("/report", verifyToken, checkRoleUser, createReportSales);
+adminRoute.post("/create-category", verifyToken, checkRoleUser, createCategory);
 
 /* ============ PATCH =========== */
 adminRoute.patch(
@@ -63,6 +71,14 @@ adminRoute.patch(
   updateProductActive
 );
 
+adminRoute.patch(
+  "/update-category",
+  updateCategoryValidation,
+  expressValidatorErrorHandling,
+  verifyToken,
+  updateCategoryInformation
+);
+
 /* ============ GET =========== */
 adminRoute.get(
   "/all-products",
@@ -72,6 +88,7 @@ adminRoute.get(
 );
 
 adminRoute.get("/all-users", verifyToken, checkRoleUser, getAllUsers);
+adminRoute.get("/report", verifyToken, checkRoleUser, getReportSales);
 
 /* ============ DELETE =========== */
 adminRoute.delete(

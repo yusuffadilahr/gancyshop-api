@@ -5,6 +5,7 @@ import { readFileSync, rmSync } from "fs";
 import { Prisma } from "@prisma/client";
 import type { FolderObject } from "imagekit/dist/libs/interfaces";
 import { hashPassword } from "../utils/hashPassword";
+import dayjs from "../utils/dayjs";
 
 export const createProduct = async (
   req: Request,
@@ -454,6 +455,438 @@ export const addNewUser = async (
       error: false,
       data: {},
       message: "Berhasil membuat user baru",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateCategoryInformation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { categoryId, categoryName, categoryMotorcycleId } = req.body;
+
+    const catId = Number(categoryId);
+    const catMotorId = Number(categoryMotorcycleId);
+
+    const findCategory = await prisma.category.findFirst({
+      where: { id: catId },
+    });
+
+    if (!findCategory)
+      throw { msg: "Data kategori sudah tidak tersedia", status: 400 };
+
+    if (
+      categoryName === findCategory?.categoryName &&
+      catMotorId === findCategory?.categoryMotorcycleId
+    )
+      throw { msg: "Data tidak ada yang diubah", status: 400 };
+
+    const updated = await prisma.category.update({
+      where: { id: catId },
+      data: {
+        categoryName,
+        categoryMotorcycleId: catMotorId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    if (!updated)
+      throw { msg: "Ada kesalahan saat mengupdate kategori", status: 400 };
+
+    res.status(200).json({
+      error: false,
+      data: {},
+      message: "Berhasil merubah data kategori",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createReportSales = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { resi, product } = req.body as {
+      resi: string;
+      product: Array<{
+        productId: number;
+        quantity: 2;
+        tax: number;
+      }>;
+    };
+
+    if (!resi || !product?.length)
+      throw { msg: "Data tidak lengkap", status: 400 };
+
+    const grouped = product.reduce((acc, p) => {
+      const exist = acc.find((x) => x.productId === p.productId);
+      if (exist) {
+        exist.quantity += p.quantity;
+        exist.tax += p.tax;
+      } else {
+        acc.push({ ...p });
+      }
+      return acc;
+    }, [] as typeof product);
+
+    const productIdArray = grouped.map((v) => v.productId);
+    const findProduct = await prisma.product.findMany({
+      where: { id: { in: productIdArray } },
+      select: { id: true, price: true, stock: true },
+    });
+
+    const checkedStock = findProduct?.filter((v) => v?.stock <= 0);
+    if (checkedStock?.length > 0)
+      throw {
+        msg: "Stock tidak boleh kurang dari 0, harap mengubah stock sebelum melanjutkan.",
+        status: 400,
+      };
+
+    if (findProduct?.length === 0)
+      throw { msg: "Produk tidak tersedia", status: 400 };
+
+    const isValidArray = productIdArray?.every((prod) =>
+      findProduct?.map((p) => p?.id)?.includes(prod)
+    );
+
+    if (!isValidArray)
+      throw { msg: "Ada Produk yang tidak tersedia", status: 400 };
+
+    await prisma.$transaction(async (tx) => {
+      const foundResiExist = await tx.report.findFirst({
+        where: { resiNumber: resi },
+      });
+
+      if (!foundResiExist) {
+        const createdReport = await tx.report.create({
+          data: { resiNumber: resi },
+        });
+
+        if (!createdReport)
+          throw { msg: "Gagal saat menyimpan laporan", status: 400 };
+
+        for (const item of grouped) {
+          const createdItems = await tx.reportitems.create({
+            data: {
+              adminFee: item?.tax,
+              qty: item?.quantity,
+              reportId: createdReport?.id,
+              productId: item?.productId,
+            },
+          });
+
+          if (!createdItems)
+            throw { msg: "Gagal saat menyimpan kedalam database", status: 400 };
+
+          const foundProductExist = await tx.product.findFirst({
+            where: { id: item?.productId },
+          });
+
+          if (!foundProductExist)
+            throw { msg: "Gagal saat menemukan produk", status: 400 };
+
+          const accumulate = foundProductExist?.stock - item?.quantity;
+          const isDeadStock = accumulate < 0;
+
+          if (isDeadStock)
+            throw {
+              msg: `Gagal karna stock saat ini tersisa ${foundProductExist?.stock}, ada kesalahan dalam membuat laporan.`,
+              status: 400,
+            };
+
+          await tx.product.update({
+            where: { id: item?.productId },
+            data: {
+              stock: { decrement: item?.quantity },
+            },
+          });
+        }
+      } else {
+        for (const item of grouped) {
+          const existingItem = await tx.reportitems.findUnique({
+            where: {
+              reportId_productId: {
+                reportId: foundResiExist.id,
+                productId: item.productId,
+              },
+            },
+          });
+
+          const foundProductExist = await tx.product.findFirst({
+            where: { id: item?.productId },
+          });
+
+          if (!foundProductExist)
+            throw { msg: "Gagal saat menemukan produk", status: 400 };
+
+          if (existingItem) {
+            const updated = await tx.reportitems.update({
+              where: {
+                reportId_productId: {
+                  reportId: foundResiExist.id,
+                  productId: item.productId,
+                },
+              },
+              data: {
+                qty: { increment: item.quantity },
+                adminFee: { increment: item.tax },
+              },
+            });
+
+            if (!updated)
+              throw { msg: "Gagal saat menyimpan laporan", status: 400 };
+          } else {
+            await tx.reportitems.create({
+              data: {
+                reportId: foundResiExist.id,
+                productId: item.productId,
+                qty: item.quantity,
+                adminFee: item.tax,
+              },
+            });
+          }
+
+          const accumulate = foundProductExist?.stock - item?.quantity;
+          const isDeadStock = accumulate < 0;
+
+          if (isDeadStock)
+            throw {
+              msg: `Gagal karna stock saat ini tersisa ${foundProductExist?.stock}, ada kesalahan dalam membuat laporan.`,
+              status: 400,
+            };
+
+          await tx.product.update({
+            where: { id: item?.productId },
+            data: {
+              stock: { decrement: item?.quantity },
+            },
+          });
+        }
+      }
+    });
+
+    res.status(201).json({
+      error: false,
+      message: "Berhasil membuat data laporan.",
+      data: {},
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getReportSales = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const tz = "Asia/Jakarta";
+
+  try {
+    const { search = "", date } = req.query as { search: string; date: string };
+    const parseDate = dayjs.tz(date, tz);
+
+    let whereClause: Prisma.reportWhereInput = {};
+
+    if (search) {
+      whereClause = {
+        resiNumber: { contains: search as string },
+      };
+    }
+
+    const startOfDay = parseDate.startOf("day").toDate();
+    const endOfDay = parseDate.endOf("day").toDate();
+
+    const dataReport = await prisma.report.findMany({
+      where: {
+        ...whereClause,
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      include: {
+        reportitems: { include: { product: true } },
+      },
+    });
+
+    const data = dataReport
+      ?.map((item) => {
+        console.log(item?.createdAt)
+        return {
+          id: item?.id,
+          resi: item?.resiNumber,
+          report: item?.reportitems?.map((v) => {
+            const { name, description, price, imageUrl, isActive } =
+              v?.product || {};
+
+            const subtotal = v?.qty * price;
+            const net = subtotal - v?.adminFee;
+
+            return {
+              id: v?.id,
+              quantity: v?.qty,
+              fee: v?.adminFee,
+              productName: name,
+              description,
+              price,
+              subtotal,
+              net,
+              imageUrl,
+              isActive,
+            };
+          }),
+        };
+      })
+      .filter((c) => !!c);
+
+    const dataSummary = {
+      subtotal: data
+        ?.flatMap((v) => v?.report)
+        ?.reduce((acc, curr) => acc + curr?.price * curr?.quantity, 0),
+      tax: data
+        ?.flatMap((v) => v?.report)
+        ?.reduce((acc, curr) => acc + curr?.fee, 0),
+      net: data
+        ?.flatMap((v) => v?.report)
+        ?.reduce(
+          (acc, curr) => acc + (curr?.price * curr?.quantity - curr?.fee),
+          0
+        ),
+      transaction: (data || [])?.flatMap((v) => v?.report)?.length,
+      qty: (data || [])
+        ?.flatMap((v) => v?.report)
+        ?.reduce((acc, curr) => acc + curr?.quantity, 0),
+    };
+
+    const { net, tax, qty, transaction } = dataSummary || {};
+    const start = dayjs().tz(tz).subtract(1, "day").startOf("day").toDate();
+    const end = dayjs().tz(tz).startOf("day").toDate();
+
+    const dataReportYesterday = await prisma.report.findMany({
+      where: { createdAt: { gte: start, lt: end } },
+      include: {
+        reportitems: {
+          include: { product: true },
+        },
+      },
+    });
+
+    const yesterday = dataReportYesterday?.map((item) => ({
+      ...item,
+      report: item?.reportitems?.map((v) => ({
+        qty: v?.qty,
+        fee: v?.adminFee,
+        price: v?.product?.price,
+      })),
+    }));
+
+    const yesterdaySummary = {
+      subtotal: yesterday
+        ?.flatMap((v) => v?.report)
+        ?.reduce((acc, curr) => acc + curr?.price * curr?.qty, 0),
+
+      tax: yesterday
+        ?.flatMap((v) => v?.report)
+        ?.reduce((acc, curr) => acc + curr?.fee, 0),
+
+      net: yesterday
+        ?.flatMap((v) => v?.report)
+        ?.reduce((acc, curr) => acc + (curr?.price * curr?.qty - curr?.fee), 0),
+
+      transaction: (yesterday || [])?.flatMap((v) => v?.report)?.length,
+
+      qty: (yesterday || [])
+        ?.flatMap((v) => v?.report)
+        ?.reduce((acc, curr) => acc + curr?.qty, 0),
+    };
+
+    const percent = (today: number, yesterday: number) => {
+      if (!yesterday || yesterday === 0) {
+        const hasGrowth = today > 0;
+
+        return {
+          value: hasGrowth ? 100 : 0,
+          trend: hasGrowth ? "up" : "equal",
+          isPositive: hasGrowth,
+        };
+      }
+
+      const value = (today / yesterday - 1) * 100;
+
+      return {
+        value: Number(value.toFixed(2)),
+        trend: value > 0 ? "up" : value < 0 ? "down" : "equal",
+        isPositive: value >= 0,
+      };
+    };
+
+    const percentage = {
+      revenue: percent(dataSummary.net, yesterdaySummary.net),
+      transaction: percent(
+        dataSummary.transaction,
+        yesterdaySummary.transaction
+      ),
+      qty: percent(dataSummary.qty, yesterdaySummary.qty),
+      tax: percent(dataSummary.tax, yesterdaySummary.tax),
+    };
+
+    const dataResponse = {
+      date: parseDate.format("DD MMMM YYYY"),
+      total: [
+        {
+          name: "Total Pemasukan",
+          value: net,
+          yesterday: yesterdaySummary.net,
+          isFormatRupiah: true,
+          percentage: percentage.revenue.value,
+          trend: percentage.revenue.trend,
+          isPositive: percentage.revenue.isPositive,
+        },
+        {
+          name: "Total Transaksi",
+          value: transaction,
+          yesterday: yesterdaySummary.transaction,
+          isFormatRupiah: false,
+          percentage: percentage.transaction.value,
+          trend: percentage.transaction.trend,
+          isPositive: percentage.transaction.isPositive,
+        },
+        {
+          name: "Total Item",
+          value: qty,
+          yesterday: yesterdaySummary.qty,
+          isFormatRupiah: false,
+          percentage: percentage.qty.value,
+          trend: percentage.qty.trend,
+          isPositive: percentage.qty.isPositive,
+        },
+        {
+          name: "Total Potongan",
+          value: tax,
+          yesterday: yesterdaySummary.tax,
+          isFormatRupiah: true,
+          percentage: percentage.tax.value,
+          trend: percentage.tax.trend,
+          isPositive: percentage.tax.isPositive,
+        },
+      ],
+      data,
+      summary: dataSummary,
+    };
+
+    res.status(200).json({
+      error: false,
+      message: "Berhasil mendapat data report",
+      data: dataResponse,
     });
   } catch (error) {
     next(error);
