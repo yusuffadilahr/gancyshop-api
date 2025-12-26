@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider          = "mysql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // di production jangan di comment
 }
 
 model cart {
@@ -105,9 +105,10 @@ model product {
   category category @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
   cart     cart[]
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime?
-  deletedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime?
+  deletedAt   DateTime?
+  reportitems reportitems[]
 
   @@index([categoryId], map: "Product_categoryId_fkey")
   @@index([ownerId], map: "Product_ownerId_fkey")
@@ -136,6 +137,34 @@ model user {
   deletedAt DateTime?
 
   @@map("user")
+}
+
+model report {
+  id         Int    @id @default(autoincrement())
+  resiNumber String @unique
+  tax        Int?
+
+  reportitems reportitems[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?
+  deletedAt DateTime?
+
+  @@map("report")
+}
+
+model reportitems {
+  id Int @id @default(autoincrement())
+
+  reportId  Int
+  productId Int
+  qty       Int
+  adminFee  Int
+
+  report  report  @relation(fields: [reportId], references: [id])
+  product product @relation(fields: [productId], references: [id])
+
+  @@unique([reportId, productId])
 }
 
 model subscription {

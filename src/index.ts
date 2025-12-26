@@ -72,7 +72,7 @@ declare global {
 }
 
 const corsOption = {
-  origin: [`${webDomain}`, "http://localhost:3000"],
+  origin: [`${webDomain}`, "http://localhost:3000", "http://localhost:5173"],
   method: ["GET", "PUT", "PATCH", "POST", "DELETE"],
   credentials: true,
 };

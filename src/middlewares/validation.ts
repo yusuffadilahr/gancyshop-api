@@ -171,3 +171,38 @@ export const createProductValidation = [
 ];
 
 export const forgotPasswordValidation = [body("email").escape()];
+
+export const subcriptionValidation = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Harap mengisi email terlebih dahulu")
+    .isEmail()
+    .withMessage("Email anda tidak valid")
+    .escape(),
+];
+
+export const updateCategoryValidation = [
+  body("categoryId")
+    .trim()
+    .notEmpty()
+    .withMessage("Harap diisi terlebih dahulu")
+    .isInt({ min: 1 })
+    .withMessage("ID kategori bertipe number")
+    .escape(),
+
+  body("categoryMotorcycleId")
+    .trim()
+    .notEmpty()
+    .withMessage("Harap diisi terlebih dahulu")
+    .isInt({ min: 1 })
+    .withMessage("ID harus bertipe number")
+    .escape(),
+
+  body("categoryName")
+    .trim()
+    .notEmpty()
+    .withMessage("Harap diisi terlebih dahulu")
+    .isString()
+    .escape(),
+];

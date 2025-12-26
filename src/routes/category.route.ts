@@ -33,12 +33,5 @@ categoryRoute.get(
   getCategoryProduct
 );
 
-categoryRoute.post(
-  "/create-category",
-  verifyToken,
-  checkRoleUser,
-  createCategory
-);
-
 // public
 categoryRoute.get("/all-category-product", getCategoryForFilterProductPublic);
