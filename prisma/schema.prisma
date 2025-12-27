@@ -92,7 +92,7 @@ model messagecustomer {
 model product {
   id          Int      @id @default(autoincrement())
   name        String
-  description String?
+  description String?  @db.LongText
   price       Float
   stock       Int      @default(0)
   imageUrl    String?
