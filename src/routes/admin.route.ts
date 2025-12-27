@@ -4,6 +4,7 @@ import { checkRoleUser } from "../middlewares/checkUser";
 import { uploader } from "../middlewares/uploader";
 import {
   addNewUser,
+  createCategory,
   createProduct,
   createReportSales,
   deleteProductInformation,
@@ -14,6 +15,10 @@ import {
   updateCategoryInformation,
   updateProductActive,
   updateProductInformation,
+  getCategoryMotorCycle,
+  getCategoryProduct,
+  getCategoryProductById,
+  deleteCategoryInformation,
 } from "../controllers/admin.controller";
 import {
   adminCreateUserValidator,
@@ -21,7 +26,6 @@ import {
   updateCategoryValidation,
 } from "../middlewares/validation";
 import { expressValidatorErrorHandling } from "../middlewares/errorValidation";
-import { createCategory } from "../controllers/category.controller";
 
 export const adminRoute = Router();
 
@@ -87,6 +91,27 @@ adminRoute.get(
   getAllDataProductAdmin
 );
 
+adminRoute.get(
+  "/all-category-motorcycle",
+  verifyToken,
+  checkRoleUser,
+  getCategoryMotorCycle
+);
+
+adminRoute.get(
+  "/all-category/:categoryMotorId",
+  verifyToken,
+  checkRoleUser,
+  getCategoryProductById
+);
+
+adminRoute.get(
+  "/all-categorys",
+  verifyToken,
+  checkRoleUser,
+  getCategoryProduct
+);
+
 adminRoute.get("/all-users", verifyToken, checkRoleUser, getAllUsers);
 adminRoute.get("/report", verifyToken, checkRoleUser, getReportSales);
 
@@ -96,4 +121,11 @@ adminRoute.delete(
   verifyToken,
   checkRoleUser,
   deleteUserById
+);
+
+adminRoute.delete(
+  "/delete-category/:idCategory",
+  verifyToken,
+  checkRoleUser,
+  deleteCategoryInformation
 );
